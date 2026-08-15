@@ -532,7 +532,17 @@ export const PHRASE_REPLACEMENTS = new Map([
   ['to a great extent', 'largely'],
   ['in a manner that', 'so that'],
   ['with the intention of', 'to'],
-  ['on the grounds that', 'because']
+  ['on the grounds that', 'because'],
+  ['serves as a testament to', 'shows'],
+  ['a testament to', 'a sign of'],
+  ['stands as a testament to', 'shows'],
+  ['stands as a beacon of', 'is a model of'],
+  ['cannot be overstated', 'matters a lot'],
+  ['cannot be understated', 'matters a lot'],
+  ['never before seen', 'never-before-seen'],
+  ['are poised to', 'are ready to'],
+  ['it is no secret that', 'everyone knows'],
+  ['the fact of the matter is', 'really']
 ]);
 
 export const HUMAN_CONNECTORS = {

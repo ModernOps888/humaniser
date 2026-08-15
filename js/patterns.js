@@ -224,7 +224,74 @@ export const AI_WORDS = new Map([
   
   ['transcend', { alternatives: ['go beyond', 'rise above', 'exceed', 'surpass'], severity: 4 }],
   ['supersede', { alternatives: ['replace', 'take over', 'succeed', 'swap'], severity: 4 }],
-  ['supplant', { alternatives: ['replace', 'oust', 'remove', 'take the place of'], severity: 4 }]
+  ['supplant', { alternatives: ['replace', 'oust', 'remove', 'take the place of'], severity: 4 }],
+  
+  // NEW AI_WORDS
+  ['arguably', { alternatives: ['perhaps', 'possibly', 'some say'], severity: 2 }],
+  ['basically', { alternatives: ['simply', 'in short', 'really'], severity: 2 }],
+  ['essentially', { alternatives: ['really', 'basically', 'at heart', 'in effect'], severity: 3 }],
+  ['specifically', { alternatives: ['namely', 'in particular', 'especially'], severity: 1 }],
+  ['significantly', { alternatives: ['greatly', 'a lot', 'notably', 'considerably'], severity: 3 }],
+  ['particularly', { alternatives: ['especially', 'notably', 'mainly'], severity: 2 }],
+  ['increasingly', { alternatives: ['more and more', 'ever more', 'gradually'], severity: 3 }],
+  ['relatively', { alternatives: ['fairly', 'somewhat', 'pretty', 'quite'], severity: 2 }],
+  ['approximately', { alternatives: ['about', 'around', 'roughly', 'nearly'], severity: 2 }],
+  ['predominantly', { alternatives: ['mostly', 'mainly', 'largely', 'chiefly'], severity: 4 }],
+  ['substantially', { alternatives: ['greatly', 'a lot', 'considerably', 'much'], severity: 3 }],
+  ['inherent', { alternatives: ['built-in', 'natural', 'core', 'basic'], severity: 3 }],
+  ['integral', { alternatives: ['key', 'core', 'central', 'vital'], severity: 3 }],
+  ['optimal', { alternatives: ['best', 'ideal', 'top', 'perfect'], severity: 3 }],
+  ['requisite', { alternatives: ['needed', 'required', 'necessary'], severity: 4 }],
+  ['pertinent', { alternatives: ['relevant', 'related', 'fitting', 'apt'], severity: 4 }],
+  ['salient', { alternatives: ['key', 'main', 'notable', 'important'], severity: 4 }],
+  ['cognizant', { alternatives: ['aware', 'mindful', 'alert to'], severity: 5 }],
+  ['conducive', { alternatives: ['helpful for', 'good for', 'favourable'], severity: 4 }],
+  ['detrimental', { alternatives: ['harmful', 'damaging', 'bad for'], severity: 3 }],
+  ['efficacious', { alternatives: ['effective', 'working', 'useful'], severity: 5 }],
+  ['exigent', { alternatives: ['urgent', 'pressing', 'critical'], severity: 5 }],
+  ['nascent', { alternatives: ['new', 'emerging', 'budding', 'early-stage'], severity: 4 }],
+  ['ubiquitous', { alternatives: ['everywhere', 'widespread', 'common'], severity: 4 }],
+  ['proliferate', { alternatives: ['spread', 'grow', 'multiply', 'increase'], severity: 4 }],
+  ['disseminate', { alternatives: ['spread', 'share', 'distribute', 'hand out'], severity: 4 }],
+  ['ameliorate', { alternatives: ['improve', 'fix', 'make better'], severity: 5 }],
+  ['mitigate', { alternatives: ['reduce', 'lessen', 'ease', 'soften'], severity: 3 }],
+  ['circumvent', { alternatives: ['avoid', 'get around', 'bypass', 'dodge'], severity: 4 }],
+  ['substantiate', { alternatives: ['prove', 'back up', 'confirm', 'support'], severity: 4 }],
+  ['corroborate', { alternatives: ['confirm', 'back up', 'verify', 'support'], severity: 4 }],
+  ['delineate', { alternatives: ['outline', 'describe', 'define', 'map out'], severity: 4 }],
+  ['elucidate', { alternatives: ['explain', 'clarify', 'clear up', 'spell out'], severity: 5 }],
+  ['judiciously', { alternatives: ['wisely', 'carefully', 'smartly', 'shrewdly'], severity: 4 }],
+  ['aforementioned', { alternatives: ['mentioned', 'above', 'earlier', 'previous'], severity: 5 }],
+  ['hitherto', { alternatives: ['until now', 'so far', 'previously', 'before'], severity: 5 }],
+  ['heretofore', { alternatives: ['until now', 'before now', 'previously'], severity: 5 }],
+  ['notwithstanding', { alternatives: ['despite', 'regardless', 'even so', 'still'], severity: 4 }],
+  ['irrespective', { alternatives: ['regardless', 'no matter', 'either way'], severity: 4 }],
+  ['overarching', { alternatives: ['overall', 'broad', 'main', 'big-picture'], severity: 3 }],
+  ['underlying', { alternatives: ['core', 'root', 'basic', 'hidden'], severity: 2 }],
+  ['actionable', { alternatives: ['practical', 'doable', 'useful', 'hands-on'], severity: 3 }],
+  ['scalable', { alternatives: ['growable', 'expandable', 'flexible'], severity: 3 }],
+  ['impactful', { alternatives: ['powerful', 'effective', 'meaningful', 'strong'], severity: 4 }],
+  ['stakeholder', { alternatives: ['participant', 'player', 'party', 'person involved'], severity: 4 }],
+  ['operationalize', { alternatives: ['put into practice', 'implement', 'roll out', 'apply'], severity: 5 }],
+  ['synergize', { alternatives: ['work together', 'collaborate', 'combine', 'team up'], severity: 5 }],
+  ['optimize', { alternatives: ['improve', 'fine-tune', 'boost', 'sharpen'], severity: 2 }],
+  ['prioritize', { alternatives: ['rank', 'focus on', 'put first', 'sort'], severity: 2 }],
+  ['incentivize', { alternatives: ['encourage', 'motivate', 'reward', 'push'], severity: 4 }],
+  ['conceptualize', { alternatives: ['imagine', 'picture', 'envision', 'think up'], severity: 4 }],
+  ['contextualize', { alternatives: ['frame', 'situate', 'put in context', 'explain'], severity: 4 }],
+  ['revolutionize', { alternatives: ['transform', 'change', 'shake up', 'remake'], severity: 3 }],
+  ['paradigmatic', { alternatives: ['typical', 'model', 'textbook', 'classic'], severity: 5 }],
+  ['symbiotic', { alternatives: ['mutual', 'shared', 'cooperative', 'linked'], severity: 4 }],
+  ['trajectory', { alternatives: ['path', 'direction', 'course', 'trend'], severity: 4 }],
+  ['ecosystem', { alternatives: ['system', 'network', 'environment', 'setup'], severity: 3 }],
+  ['infrastructure', { alternatives: ['setup', 'base', 'foundation', 'framework'], severity: 2 }],
+  ['methodology', { alternatives: ['method', 'approach', 'process', 'system'], severity: 3 }],
+  ['implementation', { alternatives: ['setup', 'rollout', 'execution', 'launch'], severity: 2 }],
+  ['prerequisite', { alternatives: ['requirement', 'must-have', 'condition', 'need'], severity: 3 }],
+  ['ramification', { alternatives: ['consequence', 'effect', 'result', 'outcome'], severity: 4 }],
+  ['juxtapose', { alternatives: ['compare', 'contrast', 'set side by side'], severity: 5 }],
+  ['extrapolate', { alternatives: ['project', 'estimate', 'guess', 'extend'], severity: 4 }],
+  ['interpolate', { alternatives: ['estimate', 'fill in', 'work out'], severity: 5 }]
 ]);
 
 export const AI_PHRASES = [
@@ -309,7 +376,34 @@ export const AI_PHRASES = [
   { pattern: /What sets .* apart/gi, severity: 3, message: 'Marketing comparison cliché', suggestion: 'Why it is unique / Its main advantage' },
   { pattern: /(are|is) (just|only) the (beginning|start|tip)/gi, severity: 3, message: 'Cliché of future promise', suggestion: 'is the first step / is a start' },
   { pattern: /Here are (some|the|a few|several)/gi, severity: 2, message: 'Robotic list intro', suggestion: 'Consider these / Such as' },
-  { pattern: /(Let's|Let us) (face it|be honest|be real)/gi, severity: 3, message: 'Fake conversational rapport', suggestion: 'Honestly / Truth is' }
+  { pattern: /(Let's|Let us) (face it|be honest|be real)/gi, severity: 3, message: 'Fake conversational rapport', suggestion: 'Honestly / Truth is' },
+  
+  // NEW AI_PHRASES
+  { pattern: /(?:As|Being) an AI/gi, severity: 5, message: 'AI self-reference', suggestion: 'remove' },
+  { pattern: /It(?:'s| is) (?:also )?(?:important|crucial|vital|essential|imperative) (?:to|that)/gi, severity: 4, message: 'Instructional AI filler', suggestion: 'directly state' },
+  { pattern: /(?:This|That|It) (?:is|was|remains) (?:a )?(?:key|critical|vital|crucial|important) (?:aspect|element|factor|component|consideration)/gi, severity: 4, message: 'AI significance padding', suggestion: 'cut to the point' },
+  { pattern: /By (?:doing so|doing this|taking this approach)/gi, severity: 3, message: 'AI procedural filler', suggestion: 'This way' },
+  { pattern: /(?:It|This) (?:can|could|may|might) (?:potentially|also) (?:help|enable|allow|empower)/gi, severity: 3, message: 'Hedged capability claim', suggestion: 'state directly' },
+  { pattern: /(?:Overall|Ultimately|In summary),? (?:it is|it's) (?:clear|evident|apparent) that/gi, severity: 4, message: 'AI summary opener', suggestion: 'cut this' },
+  { pattern: /(?:There is|There's) no (?:denying|doubt|question) (?:that|about)/gi, severity: 3, message: 'AI emphasis cliche', suggestion: 'clearly' },
+  { pattern: /(?:plays|play) (?:a |an )?(?:crucial|vital|pivotal|key|important|significant|essential|critical) (?:role|part)/gi, severity: 4, message: 'AI role emphasis', suggestion: 'matters / is key' },
+  { pattern: /(?:the |this )?(?:rapid|swift|fast|quick) (?:pace|rate|speed) of (?:change|innovation|progress|development|growth)/gi, severity: 4, message: 'AI urgency cliche', suggestion: 'how fast things change' },
+  { pattern: /(?:ensure|make sure) that (?:you|we|they|one)/gi, severity: 2, message: 'Instructional AI tone', suggestion: 'just state it' },
+  { pattern: /a (?:wide|broad|vast|diverse) (?:range|array|spectrum|variety) of/gi, severity: 3, message: 'AI quantity inflation', suggestion: 'many / various' },
+  { pattern: /(?:has|have) (?:gained|garnered|attracted|received) (?:significant|considerable|widespread|growing) (?:attention|interest|traction|popularity)/gi, severity: 4, message: 'AI popularity claim', suggestion: 'is getting popular' },
+  { pattern: /(?:the )?(?:key|main|primary|central) (?:takeaway|point|message|lesson|insight) (?:here |is )/gi, severity: 3, message: 'AI summary signposting', suggestion: 'cut to the point' },
+  { pattern: /(?:In|With) (?:today's|the current|the present|our current) (?:climate|environment|context|situation|era)/gi, severity: 4, message: 'AI temporal framing', suggestion: 'right now / today' },
+  { pattern: /(?:we|you|one) (?:can|must|should|need to) (?:also )?(?:acknowledge|recognize|appreciate|understand) (?:that|the fact that)/gi, severity: 3, message: 'AI acknowledgment padding', suggestion: 'state directly' },
+  { pattern: /this (?:is|was|has been) (?:particularly|especially|notably) (?:true|relevant|important|evident|apparent)/gi, severity: 3, message: 'AI emphasis pattern', suggestion: 'especially' },
+  { pattern: /(?:one|you) (?:cannot|can't|should not|shouldn't) (?:help but|ignore|overlook|underestimate)/gi, severity: 3, message: 'AI double-negative emphasis', suggestion: 'state positively' },
+  { pattern: /(?:stands|stood) (?:as )?(?:a |an )?(?:testament|reminder|example|illustration|symbol) (?:of|to)/gi, severity: 4, message: 'AI monumental framing', suggestion: 'shows / proves' },
+  { pattern: /in (?:order|an effort|a bid|an attempt) to (?:better|further|more effectively)/gi, severity: 3, message: 'AI purposive filler', suggestion: 'to' },
+  { pattern: /(?:armed|equipped|blessed|endowed) with (?:the )?(?:knowledge|tools|resources|skills|understanding)/gi, severity: 4, message: 'AI empowerment cliche', suggestion: 'with / knowing' },
+  { pattern: /the (?:importance|significance|value|relevance) of .{5,30} cannot be (?:overstated|understated|underestimated|ignored)/gi, severity: 5, message: 'AI hyperbolic claim', suggestion: 'X matters because...' },
+  { pattern: /(?:pave|paves|paving|paved) the way (?:for|to)/gi, severity: 4, message: 'AI progress metaphor', suggestion: 'leads to / enables' },
+  { pattern: /(?:shed|sheds|shedding) (?:new |more )?light on/gi, severity: 3, message: 'AI illumination cliche', suggestion: 'explains / reveals' },
+  { pattern: /(?:harness|tap into|unlock|unleash) (?:the )?(?:full |true |vast )?(?:power|potential|capabilities|possibilities)/gi, severity: 5, message: 'AI empowerment cliche', suggestion: 'use / take advantage of' },
+  { pattern: /(?:a|the) (?:double[- ]edged sword|two[- ]edged sword|blessing and a curse)/gi, severity: 3, message: 'AI balanced-view cliche', suggestion: 'has pros and cons' }
 ];
 
 export const SENTENCE_RESTRUCTURES = [
@@ -405,21 +499,54 @@ export const PHRASE_REPLACEMENTS = new Map([
   ['prior to', 'before'],
   ['subsequent to', 'after'],
   ['take action', 'act'],
-  ['with the exception of', 'except']
+  ['with the exception of', 'except'],
+  
+  // NEW PHRASE_REPLACEMENTS
+  ['as a consequence of', 'because of'],
+  ['by virtue of', 'because of'],
+  ['with the aim of', 'to'],
+  ['for the sake of', 'for'],
+  ['on the basis of', 'based on'],
+  ['in accordance with', 'following'],
+  ['in conjunction with', 'with'],
+  ['in the absence of', 'without'],
+  ['in the context of', 'in'],
+  ['in the face of', 'despite'],
+  ['in the vicinity of', 'near'],
+  ['prior to', 'before'],
+  ['subsequent to', 'after'],
+  ['in excess of', 'over'],
+  ['a considerable amount of', 'a lot of'],
+  ['a substantial amount of', 'a lot of'],
+  ['at the same time', 'meanwhile'],
+  ['by means of', 'by'],
+  ['in the majority of cases', 'usually'],
+  ['on a daily basis', 'daily'],
+  ['on a weekly basis', 'weekly'],
+  ['in such a way that', 'so that'],
+  ['owing to the fact that', 'because'],
+  ['for the reason that', 'because'],
+  ['in the interest of', 'for'],
+  ['as a matter of course', 'normally'],
+  ['to a large extent', 'largely'],
+  ['to a great extent', 'largely'],
+  ['in a manner that', 'so that'],
+  ['with the intention of', 'to'],
+  ['on the grounds that', 'because']
 ]);
 
 export const HUMAN_CONNECTORS = {
-  casual: ['Look,', 'Thing is,', 'Honestly,', 'Here\'s the deal:', 'Point is,', 'Real talk:', 'OK so', 'And yeah,', 'Plus,', 'Oh, and', 'So basically,', 'Funny enough,', 'Turns out,', 'Not gonna lie,', 'I mean,'],
-  conversational: ['The thing is,', 'What\'s interesting is', 'Here\'s what I think:', 'And honestly,', 'Truth is,', 'Worth mentioning:', 'Now,', 'That said,', 'On the flip side,', 'Here\'s why:', 'Interestingly enough,', 'Big picture:'],
-  professional: ['That said,', 'In practice,', 'To be clear,', 'Put simply,', 'The key point:', 'Worth noting:', 'In short,', 'On balance,', 'Practically speaking,', 'In reality,', 'The upshot:'],
-  academic: ['Notably,', 'In particular,', 'Critically,', 'By contrast,', 'Put differently,', 'To illustrate,', 'As a case in point,', 'In this regard,', 'Tellingly,', 'Empirically speaking,']
+  casual: ['Look,', 'Thing is,', 'Honestly,', 'Here\'s the deal:', 'Point is,', 'Real talk:', 'OK so', 'And yeah,', 'Plus,', 'Oh, and', 'So basically,', 'Funny enough,', 'Turns out,', 'Not gonna lie,', 'I mean,', 'See,', 'Right,', 'Like,', 'I guess', 'Basically,', 'Anywho,', 'Anyway,'],
+  conversational: ['The thing is,', 'What\'s interesting is', 'Here\'s what I think:', 'And honestly,', 'Truth is,', 'Worth mentioning:', 'Now,', 'That said,', 'On the flip side,', 'Here\'s why:', 'Interestingly enough,', 'Big picture:', 'At the same time,', 'You know,', 'Actually,', 'Come to think of it,', 'On second thought,', 'To be fair,', 'Let\'s be real,', 'In a way,'],
+  professional: ['That said,', 'In practice,', 'To be clear,', 'Put simply,', 'The key point:', 'Worth noting:', 'In short,', 'On balance,', 'Practically speaking,', 'In reality,', 'The upshot:', 'Specifically,', 'Ultimately,', 'As a result,', 'Therefore,', 'Consequently,', 'In effect,', 'To summarize,', 'In doing so,', 'Given this,'],
+  academic: ['Notably,', 'In particular,', 'Critically,', 'By contrast,', 'Put differently,', 'To illustrate,', 'As a case in point,', 'In this regard,', 'Tellingly,', 'Empirically speaking,', 'Specifically,', 'Moreover,', 'Furthermore,', 'Conversely,', 'Analogously,', 'Significantly,', 'Hence,', 'Thus,', 'Accordingly,', 'Ultimately,', 'Crucially,']
 };
 
 export const SENTENCE_STARTERS = {
-  casual: ['So ', 'And ', 'But ', 'Now ', 'Sure, ', 'OK, ', 'Right, ', 'Well, ', 'Actually, ', 'Honestly, '],
-  conversational: ['Now, ', 'And ', 'But ', 'So, ', 'Interestingly, ', 'Actually, ', 'In fact, ', 'See, ', 'Think about it — ', 'Here\'s the thing: '],
-  professional: ['In practice, ', 'Specifically, ', 'Put simply, ', 'That said, ', 'To that end, ', 'In short, '],
-  academic: ['Importantly, ', 'Notably, ', 'In particular, ', 'Critically, ', 'Indeed, ', 'To this end, ']
+  casual: ['So ', 'And ', 'But ', 'Now ', 'Sure, ', 'OK, ', 'Right, ', 'Well, ', 'Actually, ', 'Honestly, ', 'Yeah, ', 'Look, ', 'Basically, ', 'I mean, ', 'Plus, ', 'Anyway, ', 'Still, ', 'Besides, '],
+  conversational: ['Now, ', 'And ', 'But ', 'So, ', 'Interestingly, ', 'Actually, ', 'In fact, ', 'See, ', 'Think about it — ', 'Here\'s the thing: ', 'Truth is, ', 'Let\'s face it, ', 'Essentially, ', 'Ultimately, ', 'At the same time, ', 'Then again, ', 'Of course, '],
+  professional: ['In practice, ', 'Specifically, ', 'Put simply, ', 'That said, ', 'To that end, ', 'In short, ', 'Importantly, ', 'Crucially, ', 'Overall, ', 'Generally, ', 'Therefore, ', 'Thus, ', 'In reality, ', 'However, ', 'Consequently, '],
+  academic: ['Importantly, ', 'Notably, ', 'In particular, ', 'Critically, ', 'Indeed, ', 'To this end, ', 'Furthermore, ', 'Moreover, ', 'Conversely, ', 'In contrast, ', 'Specifically, ', 'Significantly, ', 'Ultimately, ', 'First, ', 'Second, ', 'Finally, ']
 };
 
 export const TRANSITION_WORDS = new Set([
@@ -490,7 +617,19 @@ export const HEDGING_PHRASES = [
   { pattern: /it remains to be seen/gi, severity: 3, suggestion: 'Time will tell' },
   { pattern: /broadly speaking/gi, severity: 3, suggestion: 'Generally' },
   { pattern: /generally speaking/gi, severity: 3, suggestion: 'Generally' },
-  { pattern: /for the most part/gi, severity: 3, suggestion: 'Mostly' }
+  { pattern: /for the most part/gi, severity: 3, suggestion: 'Mostly' },
+  
+  // NEW HEDGING_PHRASES
+  { pattern: /it (?:could|might|may) be (?:argued|said|noted|suggested) that/gi, severity: 4, suggestion: 'arguably' },
+  { pattern: /it (?:would|could) (?:seem|appear) (?:that|as if|as though)/gi, severity: 3, suggestion: 'seemingly' },
+  { pattern: /there is (?:reason|evidence|grounds) to (?:believe|suggest|think)/gi, severity: 3, suggestion: 'evidence suggests' },
+  { pattern: /it is (?:reasonable|fair|safe) to (?:say|assume|conclude)/gi, severity: 3, suggestion: 'we can say' },
+  { pattern: /one (?:might|may|could) (?:even )?(?:go so far as to )?(?:say|argue|suggest|contend)/gi, severity: 4, suggestion: 'state directly' },
+  { pattern: /it (?:seems|appears) (?:likely|probable|possible|plausible) that/gi, severity: 3, suggestion: 'likely' },
+  { pattern: /(?:to|in) (?:some|a certain|a large) (?:degree|extent|measure)/gi, severity: 3, suggestion: 'somewhat / partly' },
+  { pattern: /it is (?:not|hardly) (?:surprising|unexpected|uncommon|unusual) (?:that|to)/gi, severity: 3, suggestion: 'unsurprisingly' },
+  { pattern: /it (?:stands|goes) to reason that/gi, severity: 3, suggestion: 'logically' },
+  { pattern: /the (?:fact|reality|truth) (?:of the matter )?(?:is|remains) that/gi, severity: 4, suggestion: 'really' }
 ];
 
 export const FILLER_STARTERS = [
@@ -505,7 +644,17 @@ export const FILLER_STARTERS = [
   { pattern: /^Having said that,/gi, severity: 3 },
   { pattern: /^With that being said,/gi, severity: 4 },
   { pattern: /^That said,/gi, severity: 2 },
-  { pattern: /^Be that as it may,/gi, severity: 4 }
+  { pattern: /^Be that as it may,/gi, severity: 4 },
+  
+  // NEW FILLER_STARTERS
+  { pattern: /^It is (?:widely|generally|commonly|universally) (?:known|accepted|acknowledged|recognised|recognized) that/gim, severity: 4 },
+  { pattern: /^(?:There is|There's) no (?:denying|doubt|question) that/gim, severity: 3 },
+  { pattern: /^(?:What is|What's) (?:particularly|especially|most) (?:interesting|noteworthy|remarkable|striking) is/gim, severity: 3 },
+  { pattern: /^The (?:fact|reality|truth) (?:of the matter )?is that/gim, severity: 4 },
+  { pattern: /^It (?:goes|should go) without saying that/gim, severity: 4 },
+  { pattern: /^As (?:previously|earlier|already) (?:mentioned|noted|stated|discussed)/gim, severity: 3 },
+  { pattern: /^It (?:should|must) be (?:noted|emphasized|stressed|pointed out) that/gim, severity: 4 },
+  { pattern: /^(?:When|If) (?:we|you|one) (?:consider|examine|look at|think about)/gim, severity: 2 }
 ];
 
 export const PATTERN_CATEGORIES = {

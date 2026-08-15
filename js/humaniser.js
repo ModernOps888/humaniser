@@ -385,6 +385,19 @@ export function quickFix(text, patterns, style = 'casual') {
 
     // PASS 10: Final Cleanup
     const applyPass10 = () => {
+        // Fix a/an article mismatches caused by vocabulary swaps
+        const vowelSound = /^[aeiou]/i;
+        // "an" before consonant sound → "a"
+        applyChanges(/\b(an)\s+([bcdfghjklmnpqrstvwxyz]\w*)/gi, (match, article, word) => {
+            return `${preserveCase(article, 'a')} ${word}`;
+        }, 'pass_10_cleanup');
+        // "a" before vowel sound → "an"
+        applyChanges(/\b(a)\s+([aeiou]\w*)/gi, (match, article, word) => {
+            // Skip "a us..." "a un..." "a eu..." (sounds like 'yoo')
+            if (/^(uni|use|us[eu]|ubi|uro|eur|util)/i.test(word)) return match;
+            return `${preserveCase(article, 'an')} ${word}`;
+        }, 'pass_10_cleanup');
+
         // Remove double spaces
         applyChanges(/ {2,}/g, ' ', 'pass_10_cleanup');
         

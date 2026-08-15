@@ -28,7 +28,7 @@ export const AI_WORDS = new Map([
   ['underscore', { alternatives: ['highlight', 'emphasize', 'show', 'stress'], severity: 4 }],
   ['realm', { alternatives: ['area', 'field', 'domain', 'world'], severity: 5 }],
   ['tapestry', { alternatives: ['mix', 'blend', 'collection', 'weave'], severity: 5 }],
-  ['testament', { alternatives: ['proof', 'evidence', 'sign', 'example'], severity: 4 }],
+  ['testament', { alternatives: ['sign', 'example', 'symbol', 'reflection'], severity: 4 }],
   ['foster', { alternatives: ['encourage', 'support', 'promote', 'build'], severity: 3 }],
   ['navigate', { alternatives: ['handle', 'manage', 'deal with', 'work through'], severity: 4 }],
   ['unpack', { alternatives: ['explain', 'break down', 'examine', 'explore'], severity: 4 }],
@@ -537,7 +537,7 @@ export const PHRASE_REPLACEMENTS = new Map([
 
 export const HUMAN_CONNECTORS = {
   casual: ['Look,', 'Thing is,', 'Honestly,', 'Here\'s the deal:', 'Point is,', 'Real talk:', 'OK so', 'And yeah,', 'Plus,', 'Oh, and', 'So basically,', 'Funny enough,', 'Turns out,', 'Not gonna lie,', 'I mean,', 'See,', 'Right,', 'Like,', 'I guess', 'Basically,', 'Anywho,', 'Anyway,'],
-  conversational: ['The thing is,', 'What\'s interesting is', 'Here\'s what I think:', 'And honestly,', 'Truth is,', 'Worth mentioning:', 'Now,', 'That said,', 'On the flip side,', 'Here\'s why:', 'Interestingly enough,', 'Big picture:', 'At the same time,', 'You know,', 'Actually,', 'Come to think of it,', 'On second thought,', 'To be fair,', 'Let\'s be real,', 'In a way,'],
+  conversational: ['The thing is,', 'Interestingly,', 'And honestly,', 'Truth is,', 'Now,', 'That said,', 'On the flip side,', 'At the same time,', 'You know,', 'Actually,', 'Come to think of it,', 'On second thought,', 'To be fair,', 'In a way,', 'Then again,', 'Funnily enough,', 'As it turns out,', 'In any case,', 'All the same,', 'Even so,'],
   professional: ['That said,', 'In practice,', 'To be clear,', 'Put simply,', 'It is worth noting that', 'In short,', 'On balance,', 'Practically speaking,', 'In reality,', 'More to the point,', 'Specifically,', 'Ultimately,', 'As a result,', 'Therefore,', 'In effect,', 'To summarise,', 'Given this,', 'At the same time,', 'By the same token,', 'In other words,'],
   academic: ['Notably,', 'In particular,', 'Critically,', 'By contrast,', 'Put differently,', 'To illustrate,', 'In this regard,', 'Tellingly,', 'As such,', 'Specifically,', 'Correspondingly,', 'Analogously,', 'Significantly,', 'Hence,', 'Thus,', 'Accordingly,', 'Ultimately,', 'In turn,', 'By extension,', 'To this end,']};
 

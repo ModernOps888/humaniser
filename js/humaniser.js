@@ -369,11 +369,13 @@ export function quickFix(text, patterns, style = 'casual') {
     // PASS 9: Natural Imperfections
     const applyPass9 = () => {
         if (style === 'academic') return; // Minimal imperfections for academic
+        if (style === 'professional') return; // Keep professional clean
         
-        // Add occasional em-dashes for "which is" / "that is" clauses
-        const dashRegex = /\b(\w+)\s+(which is|that is)\s+(\w+)\b/gi;
+        // Add occasional em-dashes for explanatory "which is" / "that is" clauses
+        // Only match when followed by an adjective/noun (not a verb like -ing/-ed)
+        const dashRegex = /\b(\w+)\s+(which is|that is)\s+((?!\w+(?:ing|ed|s)\b)[a-z]\w*)\b/gi;
         applyChanges(dashRegex, (match, word1, transition, word2) => {
-            if (Math.random() > 0.7) {
+            if (Math.random() > 0.8) {
                 return `${word1} — ${transition} — ${word2}`;
             }
             return match;

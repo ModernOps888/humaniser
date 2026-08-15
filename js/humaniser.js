@@ -248,13 +248,24 @@ export function quickFix(text, patterns, style = 'casual') {
         const connectors = HUMAN_CONNECTORS[style] || HUMAN_CONNECTORS['casual'] || ['But', 'And', 'So'];
         
         TRANSITION_WORDS.forEach(word => {
-            // Match transition words at the start of sentences
+            // Match transition words at the start of sentences (with optional comma after)
             const regex = new RegExp(`([.?!]\\s+|^)${word}(?:\\s*,\\s*|\\s+)`, 'gi');
             applyChanges(regex, (match, prefix) => {
                 const seed = match.charCodeAt(0) + match.length;
                 if (seededRandom(seed) <= 0.65) { // 65% replacement rate
                     const randomConnector = connectors[Math.floor(seededRandom(seed + 1) * connectors.length)];
-                    return `${prefix}${preserveCase(word, randomConnector)} `;
+                    // Clean up the connector: if it already ends with punctuation, use as-is
+                    const trimmed = randomConnector.trim();
+                    const endsWithPunct = /[,;:\-]$/.test(trimmed);
+                    // Simple conjunctions (And, But, So, Or, Yet) don't need a comma
+                    const simpleConjunctions = ['and', 'but', 'so', 'or', 'yet', 'plus', 'also', 'now', 'still'];
+                    const isSimple = simpleConjunctions.includes(trimmed.replace(/[^a-zA-Z]/g, '').toLowerCase());
+                    
+                    let connector = preserveCase(word, trimmed);
+                    if (!endsWithPunct && !isSimple) {
+                        connector += ',';
+                    }
+                    return `${prefix}${connector} `;
                 }
                 return match;
             }, 'pass_5_transition_replacement');

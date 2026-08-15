@@ -6,8 +6,8 @@ export const AI_WORDS = new Map([
   // Existing AI_WORDS
   ['delve', { alternatives: ['explore', 'examine', 'look into', 'dig into'], severity: 4 }],
   ['crucial', { alternatives: ['important', 'key', 'vital', 'critical'], severity: 3 }],
-  ['furthermore', { alternatives: ['also', 'plus', 'and', 'on top of that'], severity: 4 }],
-  ['moreover', { alternatives: ['also', 'and', 'besides', 'what\'s more'], severity: 4 }],
+  ['furthermore', { alternatives: ['also', 'plus', 'on top of that', 'what is more'], severity: 4 }],
+  ['moreover', { alternatives: ['also', 'besides', 'what\'s more', 'on top of that'], severity: 4 }],
   ['leverage', { alternatives: ['use', 'take advantage of', 'tap into'], severity: 4 }],
   ['utilize', { alternatives: ['use', 'apply', 'employ'], severity: 5 }],
   ['facilitate', { alternatives: ['help', 'enable', 'make possible', 'support'], severity: 4 }],

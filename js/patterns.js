@@ -6,8 +6,8 @@ export const AI_WORDS = new Map([
   // Existing AI_WORDS
   ['delve', { alternatives: ['explore', 'examine', 'look into', 'dig into'], severity: 4 }],
   ['crucial', { alternatives: ['important', 'key', 'vital', 'critical'], severity: 3 }],
-  ['furthermore', { alternatives: ['also', 'plus', 'on top of that', 'what is more'], severity: 4 }],
-  ['moreover', { alternatives: ['also', 'besides', 'what\'s more', 'on top of that'], severity: 4 }],
+  ['furthermore', { alternatives: ['also', 'plus', 'on top of that', 'besides'], severity: 4 }],
+  ['moreover', { alternatives: ['also', 'besides', 'plus', 'on top of that'], severity: 4 }],
   ['leverage', { alternatives: ['use', 'take advantage of', 'tap into'], severity: 4 }],
   ['utilize', { alternatives: ['use', 'apply', 'employ'], severity: 5 }],
   ['facilitate', { alternatives: ['help', 'enable', 'make possible', 'support'], severity: 4 }],
@@ -538,9 +538,8 @@ export const PHRASE_REPLACEMENTS = new Map([
 export const HUMAN_CONNECTORS = {
   casual: ['Look,', 'Thing is,', 'Honestly,', 'Here\'s the deal:', 'Point is,', 'Real talk:', 'OK so', 'And yeah,', 'Plus,', 'Oh, and', 'So basically,', 'Funny enough,', 'Turns out,', 'Not gonna lie,', 'I mean,', 'See,', 'Right,', 'Like,', 'I guess', 'Basically,', 'Anywho,', 'Anyway,'],
   conversational: ['The thing is,', 'What\'s interesting is', 'Here\'s what I think:', 'And honestly,', 'Truth is,', 'Worth mentioning:', 'Now,', 'That said,', 'On the flip side,', 'Here\'s why:', 'Interestingly enough,', 'Big picture:', 'At the same time,', 'You know,', 'Actually,', 'Come to think of it,', 'On second thought,', 'To be fair,', 'Let\'s be real,', 'In a way,'],
-  professional: ['That said,', 'In practice,', 'To be clear,', 'Put simply,', 'The key point:', 'Worth noting:', 'In short,', 'On balance,', 'Practically speaking,', 'In reality,', 'The upshot:', 'Specifically,', 'Ultimately,', 'As a result,', 'Therefore,', 'Consequently,', 'In effect,', 'To summarize,', 'In doing so,', 'Given this,'],
-  academic: ['Notably,', 'In particular,', 'Critically,', 'By contrast,', 'Put differently,', 'To illustrate,', 'As a case in point,', 'In this regard,', 'Tellingly,', 'Empirically speaking,', 'Specifically,', 'Moreover,', 'Furthermore,', 'Conversely,', 'Analogously,', 'Significantly,', 'Hence,', 'Thus,', 'Accordingly,', 'Ultimately,', 'Crucially,']
-};
+  professional: ['That said,', 'In practice,', 'To be clear,', 'Put simply,', 'It is worth noting that', 'In short,', 'On balance,', 'Practically speaking,', 'In reality,', 'More to the point,', 'Specifically,', 'Ultimately,', 'As a result,', 'Therefore,', 'In effect,', 'To summarise,', 'Given this,', 'At the same time,', 'By the same token,', 'In other words,'],
+  academic: ['Notably,', 'In particular,', 'Critically,', 'By contrast,', 'Put differently,', 'To illustrate,', 'In this regard,', 'Tellingly,', 'As such,', 'Specifically,', 'Correspondingly,', 'Analogously,', 'Significantly,', 'Hence,', 'Thus,', 'Accordingly,', 'Ultimately,', 'In turn,', 'By extension,', 'To this end,']};
 
 export const SENTENCE_STARTERS = {
   casual: ['So ', 'And ', 'But ', 'Now ', 'Sure, ', 'OK, ', 'Right, ', 'Well, ', 'Actually, ', 'Honestly, ', 'Yeah, ', 'Look, ', 'Basically, ', 'I mean, ', 'Plus, ', 'Anyway, ', 'Still, ', 'Besides, '],

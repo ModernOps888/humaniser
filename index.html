@@ -173,14 +173,16 @@
           <div class="setting-row">
             <label for="api-provider">Provider</label>
             <select id="api-provider" class="style-select">
-              <option value="openai">OpenAI</option>
-              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI (GPT-4o-mini)</option>
+              <option value="gemini">Google Gemini (Gemini 2.5 Flash)</option>
+              <option value="anthropic">Anthropic (Claude 3.5 Haiku)</option>
+              <option value="deepseek">DeepSeek (DeepSeek-V3)</option>
             </select>
           </div>
           <div class="setting-row">
             <label for="api-key">API Key</label>
             <div class="input-with-action">
-              <input type="password" id="api-key" class="text-input" placeholder="sk-... or AIza...">
+              <input type="password" id="api-key" class="text-input" placeholder="sk-..., AIza..., etc.">
               <button id="btn-toggle-key" class="panel-btn" title="Show/hide key" aria-label="Toggle API key visibility">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>

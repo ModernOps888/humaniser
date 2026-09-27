@@ -59,9 +59,15 @@ A 10-pass transformation pipeline that runs entirely in your browser:
 9. **Natural Imperfections** — Adds subtle human touches (dashes, parentheticals)
 10. **Final Cleanup** — Fixes spacing, capitalisation, and punctuation
 
-### ✨ Deep Rewrite (Optional API)
+### ✨ Deep Rewrite (Multi-Provider AI API)
 
-Bring your own OpenAI or Google Gemini API key for context-aware rewriting. Your key stays in your browser's localStorage — never sent to any server except the AI provider.
+Bring your own API key for context-aware rewriting across 4 major frontier and open model providers:
+- **OpenAI** (`gpt-4o-mini`)
+- **Google Gemini** (`gemini-2.5-flash`)
+- **Anthropic** (`claude-3-5-haiku`)
+- **DeepSeek** (`deepseek-chat` / DeepSeek-V3)
+
+Your keys stay in your browser's `localStorage` only — never sent to any intermediary server, only directly to the chosen AI provider.
 
 ### 🎨 Four Writing Styles
 

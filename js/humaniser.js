@@ -492,7 +492,7 @@ Rules:
       return { text: data.choices[0].message.content.trim() };
       
     } else if (provider === 'gemini') {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -515,7 +515,59 @@ Rules:
       const data = await response.json();
       const rewritten = data.candidates?.[0]?.content?.parts?.[0]?.text || text;
       return { text: rewritten.trim() };
-      
+
+    } else if (provider === 'anthropic') {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'dangerously-allow-browser': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-haiku-20241022',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: [
+            { role: 'user', content: text }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'Anthropic API error');
+      }
+
+      const data = await response.json();
+      const content = data.content?.map(c => c.text).join('') || text;
+      return { text: content.trim() };
+
+    } else if (provider === 'deepseek') {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: text }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'DeepSeek API error');
+      }
+
+      const data = await response.json();
+      return { text: data.choices[0].message.content.trim() };
+
     } else {
       return { text, error: "Unknown provider" };
     }

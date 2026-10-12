@@ -13,7 +13,10 @@
   <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies" />
   <img src="https://img.shields.io/badge/API-optional-blue" alt="API Optional" />
   <img src="https://img.shields.io/badge/license-MIT-orange" alt="MIT License" />
+  <a href="https://infinitytechstack.uk/consulting"><img src="https://img.shields.io/badge/Enterprise-Security_Audits-ff00e5" alt="Enterprise Audits" /></a>
 </p>
+
+> 🛡️ **Enterprise AI Production Audits & Systems Advisory**: Deploying LLM-driven content pipelines, autonomous agents, or customer-facing AI where synthetic phrasing, hallucinations, or prompt leakage compromise your brand? We deliver **fixed-scope, 3-day enterprise AI audits** (£4,500 with runnable remediation PRs) and **principal systems advisory** (£650–£7,500). [**Explore Packages & Book a Call →**](https://infinitytechstack.uk/consulting)
 
 ---
 

@@ -11,11 +11,15 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies" />
+  <img src="https://img.shields.io/badge/voice_modes-6-00f0ff" alt="6 Voice Modes" />
   <img src="https://img.shields.io/badge/API-optional-blue" alt="API Optional" />
   <img src="https://img.shields.io/badge/license-MIT-orange" alt="MIT License" />
+  <a href="https://infinitytechstack.uk/humaniser"><img src="https://img.shields.io/badge/Live_Workbench-infinitytechstack.uk-10b981" alt="Live Workbench" /></a>
   <a href="https://infinitytechstack.uk/consulting"><img src="https://img.shields.io/badge/Enterprise-Security_Audits-ff00e5" alt="Enterprise Audits" /></a>
 </p>
 
+> 🌐 **Live Interactive Workbench (Free, Zero Sign-Up)**: Try the full copy-paste workbench with instant auto-humanize, 6 voice modes, anti-repetition phrase ledger, watermark/em-dash cleaner, and side-by-side diff view at [**infinitytechstack.uk/humaniser →**](https://infinitytechstack.uk/humaniser)
+>
 > 🛡️ **Enterprise AI Production Audits & Systems Advisory**: Deploying LLM-driven content pipelines, autonomous agents, or customer-facing AI where synthetic phrasing, hallucinations, or prompt leakage compromise your brand? We deliver **fixed-scope, 3-day enterprise AI audits** (£4,500 with runnable remediation PRs) and **principal systems advisory** (£650–£7,500). [**Explore Packages & Book a Call →**](https://infinitytechstack.uk/consulting)
 
 ---
@@ -47,39 +51,42 @@ Humaniser sits between you and your audience. Paste any text, and it instantly d
 | **Passive Voice** | Excessive passive construction | *"was implemented" → "we implemented"* |
 | **Em-dashes** | Overuse of dashes | More than 2 per 500 words |
 
-### ⚡ Quick Fix (No API Required)
+### ⚡ Deterministic Transformation Pipeline (No API Required)
 
-A 10-pass transformation pipeline that runs entirely in your browser:
+An 11-stage transformation pipeline that runs entirely in your browser while preserving multi-paragraph structure:
 
+0. **Watermark, Chat-Preamble & Em-Dash Cleaner** — Strips invisible zero-width Unicode watermarks (`\u200B`–`\u2060`), removes robotic chat openers (*"Certainly! Here is..."*), and normalizes mechanical em-dash overuse
 1. **Filler Removal** — Strips hedging phrases and redundant starters
-2. **Phrase Simplification** — 67+ wordy constructions simplified (*"in order to" → "to"*, *"due to the fact that" → "because"*)
-3. **Vocabulary Swap** — Replaces AI buzzwords with natural alternatives, with deduplication to avoid repetition
-4. **Contraction Insertion** — Adds natural contractions based on writing style
-5. **Transition Replacement** — Swaps robotic transitions with natural connectors
-6. **Sentence Restructuring** — 21 patterns that transform AI sentence constructions
+2. **Punctuation-Safe Phrase Simplification** — 67+ wordy constructions simplified (*"in order to" → "to"*, *"due to the fact that" → "because"*) with strict word/hyphen boundary guards
+3. **Vocabulary Swap + Anti-Repetition Phrase Ledger** — Replaces AI buzzwords with natural alternatives while tracking global document frequency and a 12-token sliding window so the engine never repeats the same synonym
+4. **Voice-Calibrated Contraction Insertion** — Adds natural contractions tuned to the selected voice mode
+5. **Transition Orchestrator** — Deterministically rotates natural sentence connectors across paragraphs without adjacent repetition
+6. **Sentence Restructuring** — 21 structural rules that transform robotic AI clause templates
 7. **Starter Variation** — Breaks up repetitive sentence beginnings
-8. **Length Variation** — Splits overly long sentences at natural break points
-9. **Natural Imperfections** — Adds subtle human touches (dashes, parentheticals)
-10. **Final Cleanup** — Fixes spacing, capitalisation, and punctuation
+8. **Paragraph-Aware Length Variation** — Splits overly long 38+ word sentences at natural conjunction boundaries while preserving `\n\n` multi-paragraph layout
+9. **Natural Rhythm & Voice Polish** — Converts stiff relative clauses into natural parentheticals
+10. **Phonetic `a/an` Grammar Self-Healer** — Automatically repairs article agreement after vocabulary swaps, including phonetic exceptions (*"an hour"*, *"an honest"*, *"an LLM"*, *"an API"*, *"an MBA"*, *"a unique"*, *"a uniform"*, *"a one-time"*)
 
 ### ✨ Deep Rewrite (Multi-Provider AI API)
 
 Bring your own API key for context-aware rewriting across 4 major frontier and open model providers:
 - **OpenAI** (`gpt-4o-mini`)
 - **Google Gemini** (`gemini-2.5-flash`)
-- **Anthropic** (`claude-3-5-haiku`)
+- **Anthropic** (`claude-haiku-4-5` / `claude-sonnet-5-5`)
 - **DeepSeek** (`deepseek-chat` / DeepSeek-V3)
 
 Your keys stay in your browser's `localStorage` only — never sent to any intermediary server, only directly to the chosen AI provider.
 
-### 🎨 Four Writing Styles
+### 🎨 Six Voice Modes
 
-| Style | Contractions | Vocabulary | Tone |
-|-------|-------------|-----------|------|
-| **Casual** | Aggressive (90%) | Most informal alternatives | Relaxed, direct |
-| **Conversational** | Aggressive (90%) | Natural-sounding picks | Engaging, warm |
-| **Professional** | Moderate (60%) | Balanced alternatives | Clean, confident |
-| **Academic** | Minimal (20%) | Formal but natural | Precise, measured |
+| Voice Mode | Contractions | Vocabulary & Cadence | Tone |
+|------------|-------------|----------------------|------|
+| **Natural / Casual** | Aggressive (90%) | Everyday, direct alternatives | Relaxed, human |
+| **Conversational** | Aggressive (90%) | Warm, engaging connectors & parentheticals | Approachable, fluid |
+| **Executive / Professional** | Moderate (55%) | Crisp, board-ready phrasing | Clean, authoritative |
+| **Technical** | Moderate (55%) | Preserves domain precision & acronyms | Clear, engineering-grade |
+| **Academic** | Minimal (15%) | Formal, measured lexical choices | Scholarly, objective |
+| **Creative** | Expressive (90%) | High burstiness & varied cadence | Vivid, narrative |
 
 ### 📊 Real-Time Dashboard
 

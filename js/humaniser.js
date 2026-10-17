@@ -82,6 +82,8 @@ function restoreBlocks(text, blocks) {
 
 /**
  * Quick Fix engine - applies multiple passes of text transformation
+ * Supports 6 voice modes: casual (natural), conversational, professional (executive),
+ * technical, academic, creative.
  */
 export function quickFix(text, patterns, style = 'casual') {
     if (!text || text.trim().length === 0) {
@@ -92,19 +94,15 @@ export function quickFix(text, patterns, style = 'casual') {
     const protectedInfo = protectBlocks(text);
     let currentText = protectedInfo.text;
 
+    // Normalize newlines and preserve multi-paragraph structure via sentinel tokens
+    currentText = currentText.replace(/\r\n/g, '\n');
+
     // Helper to apply regex replacement and track changes
     const applyChanges = (regex, replacer, passName) => {
-        let match;
-        // Create a new RegExp based on the passed one, adding 'g' flag if missing
         const globalRegex = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
-        
-        // We use string.replace to actually change the text, but we also want to track changes.
-        // It's tricky to track exact positions as the string mutates, so we'll just track the before/after string.
         let newText = currentText.replace(globalRegex, (matchStr, ...args) => {
-            // Find the offset (last argument before the full string)
             const offset = args[args.length - 2];
             const replacement = typeof replacer === 'function' ? replacer(matchStr, ...args) : replacer;
-            
             if (matchStr !== replacement) {
                 allChanges.push({
                     original: matchStr,
@@ -115,23 +113,36 @@ export function quickFix(text, patterns, style = 'casual') {
             }
             return replacement;
         });
-        
         currentText = newText;
+    };
+
+    // PASS 0: Watermark, Chat-Prefix & Mechanical Em-Dash Cleaner
+    const applyPass0 = () => {
+        // Strip zero-width & invisible Unicode watermarks
+        applyChanges(/[\u200B\u200C\u200D\uFEFF\u00AD\u2060]/g, '', 'pass_0_watermark_cleaner');
+        // Strip robotic chat preamble lines ("Certainly! Here is...", "Sure, here's...")
+        applyChanges(/^(?:certainly|sure|of course|absolutely|great question)[!,.]?\s+here\s+(?:is|are)\s+[^\n:]+:\s*\n+/gim, '', 'pass_0_watermark_cleaner');
+        // Normalize excessive mechanical em-dashes (>1 per paragraph) into natural commas or parentheses
+        let dashCount = 0;
+        applyChanges(/\s*[—–]\s*/g, (match) => {
+            dashCount++;
+            if (style === 'academic' || style === 'technical' || dashCount % 2 === 0) {
+                return ', ';
+            }
+            return ' — ';
+        }, 'pass_0_watermark_cleaner');
     };
 
     // PASS 1: Remove Filler Phrases
     const applyPass1 = () => {
         if (HEDGING_PHRASES && Array.isArray(HEDGING_PHRASES)) {
             HEDGING_PHRASES.forEach(item => {
-                // Each item is {pattern: RegExp, severity, suggestion}
                 const regex = new RegExp(item.pattern.source, 'gi');
                 applyChanges(regex, '', 'pass_1_filler_removal');
             });
         }
-        
         if (FILLER_STARTERS && Array.isArray(FILLER_STARTERS)) {
             FILLER_STARTERS.forEach(item => {
-                // Each item is {pattern: RegExp, severity}
                 const regex = new RegExp(item.pattern.source, 'gim');
                 applyChanges(regex, '', 'pass_1_filler_removal');
             });
@@ -141,13 +152,12 @@ export function quickFix(text, patterns, style = 'casual') {
     // Escape special regex chars in a string
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // PASS 2: Wordy Phrase Simplification
+    // PASS 2: Wordy Phrase Simplification (Punctuation-Safe Boundaries)
     const applyPass2 = () => {
         if (!PHRASE_REPLACEMENTS) return;
-        // PHRASE_REPLACEMENTS is a Map<string, string>
         const iterate = PHRASE_REPLACEMENTS instanceof Map ? PHRASE_REPLACEMENTS : new Map(Object.entries(PHRASE_REPLACEMENTS));
         iterate.forEach((replacement, phrase) => {
-            const regex = new RegExp(`\\b${escapeRegex(phrase)}\\b`, 'gi');
+            const regex = new RegExp(`(?<![\\w-])${escapeRegex(phrase)}(?![\\w-])`, 'gi');
             applyChanges(regex, (match) => {
                 const r = preserveCase(match, replacement);
                 return r || '';
@@ -155,61 +165,59 @@ export function quickFix(text, patterns, style = 'casual') {
         });
     };
 
-    // PASS 3: AI Vocabulary Replacement
+    // PASS 3: AI Vocabulary Replacement with Anti-Repetition Ledger
     const applyPass3 = () => {
         if (!AI_WORDS) return;
-        
+
         const usedReplacements = new Map();
-        const recentlyUsedGlobal = []; // Track recent replacements to avoid adjacent duplicates
-        // AI_WORDS is a Map<string, {alternatives: string[], severity: number}>
+        const antiRepetitionLedger = new Map(); // Tracks total usage count of each replacement across document
+        const recentlyUsedGlobal = [];
         const iterate = AI_WORDS instanceof Map ? AI_WORDS : new Map(Object.entries(AI_WORDS));
-        
+
         iterate.forEach((data, word) => {
-            const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'gi');
+            const regex = new RegExp(`(?<![\\w-])${escapeRegex(word)}(?![\\w-])`, 'gi');
             const alternatives = data.alternatives || data;
-            
             if (!Array.isArray(alternatives) || alternatives.length === 0) return;
-            
+
             applyChanges(regex, (match) => {
-                // Pick alternative based on style:
-                // casual: first (most informal), academic: last (most formal),
-                // professional: middle, conversational: first
                 let pickIndex = 0;
                 const wordLower = word.toLowerCase();
                 if (!usedReplacements.has(wordLower)) {
                     usedReplacements.set(wordLower, 0);
                 }
                 const rotation = usedReplacements.get(wordLower);
-                
-                if (style === 'casual' || style === 'conversational') {
+
+                if (style === 'casual' || style === 'conversational' || style === 'creative') {
                     pickIndex = rotation % alternatives.length;
-                } else if (style === 'academic') {
-                    pickIndex = (alternatives.length - 1 - rotation % alternatives.length);
+                } else if (style === 'academic' || style === 'technical') {
+                    pickIndex = (alternatives.length - 1 - (rotation % alternatives.length));
                 } else {
-                    // professional: start from middle
                     const mid = Math.floor(alternatives.length / 2);
                     pickIndex = (mid + rotation) % alternatives.length;
                 }
-                
-                // Avoid using a replacement that was just used nearby
+
+                // Select candidate with lowest ledger frequency and not in recent window
                 let chosen = alternatives[pickIndex];
-                if (recentlyUsedGlobal.includes(chosen.toLowerCase()) && alternatives.length > 1) {
-                    // Try the next alternative
-                    for (let i = 1; i < alternatives.length; i++) {
-                        const alt = alternatives[(pickIndex + i) % alternatives.length];
-                        if (!recentlyUsedGlobal.includes(alt.toLowerCase())) {
-                            chosen = alt;
-                            break;
-                        }
+                let bestScore = Infinity;
+                for (let i = 0; i < alternatives.length; i++) {
+                    const candidate = alternatives[(pickIndex + i) % alternatives.length];
+                    const candLower = candidate.toLowerCase();
+                    const ledgerCount = antiRepetitionLedger.get(candLower) || 0;
+                    const recentPenalty = recentlyUsedGlobal.includes(candLower) ? 10 : 0;
+                    const score = ledgerCount * 3 + recentPenalty + i * 0.1;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        chosen = candidate;
                     }
                 }
-                
-                recentlyUsedGlobal.push(chosen.toLowerCase());
-                if (recentlyUsedGlobal.length > 10) recentlyUsedGlobal.shift();
-                
+
+                const chosenLower = chosen.toLowerCase();
+                antiRepetitionLedger.set(chosenLower, (antiRepetitionLedger.get(chosenLower) || 0) + 1);
+                recentlyUsedGlobal.push(chosenLower);
+                if (recentlyUsedGlobal.length > 12) recentlyUsedGlobal.shift();
+
                 usedReplacements.set(wordLower, rotation + 1);
                 return preserveCase(match, chosen);
-                
             }, 'pass_3_ai_vocab_replacement');
         });
     };
@@ -217,19 +225,16 @@ export function quickFix(text, patterns, style = 'casual') {
     // PASS 4: Contraction Insertion
     const applyPass4 = () => {
         if (!CONTRACTION_MAP) return;
-        
-        let probability = 0.9;
-        if (style === 'professional') probability = 0.6;
-        if (style === 'academic') probability = 0.2;
 
-        // CONTRACTION_MAP is a Map<string, string>
+        let probability = 0.9;
+        if (style === 'professional' || style === 'executive' || style === 'technical') probability = 0.55;
+        if (style === 'academic') probability = 0.15;
+
         const iterate = CONTRACTION_MAP instanceof Map ? CONTRACTION_MAP : new Map(Object.entries(CONTRACTION_MAP));
         iterate.forEach((contracted, formal) => {
-            // Only apply academic to basic ones
             if (style === 'academic' && !['do not', 'it is', 'cannot', 'will not'].includes(formal.toLowerCase())) {
                 return;
             }
-
             const regex = new RegExp(`\\b${escapeRegex(formal)}\\b`, 'gi');
             applyChanges(regex, (match) => {
                 const seed = match.charCodeAt(0) + match.length;
@@ -241,33 +246,29 @@ export function quickFix(text, patterns, style = 'casual') {
         });
     };
 
-    // PASS 5: Transition Word Replacement
+    // PASS 5: Transition Orchestrator (Deduplicated Connector Rotation)
     const applyPass5 = () => {
         if (!TRANSITION_WORDS || !HUMAN_CONNECTORS) return;
-        
-        const connectors = HUMAN_CONNECTORS[style] || HUMAN_CONNECTORS['casual'] || ['But', 'And', 'So'];
-        
+
+        const styleKey = (style === 'executive' || style === 'technical') ? 'professional' : (style === 'creative' ? 'conversational' : style);
+        const connectors = HUMAN_CONNECTORS[styleKey] || HUMAN_CONNECTORS['casual'] || ['But', 'And', 'So'];
+        let transitionCursor = 0;
+
         TRANSITION_WORDS.forEach(word => {
-            // Match transition words at the start of sentences (with optional comma after)
-            const regex = new RegExp(`([.?!]\\s+|^)${word}(?:\\s*,\\s*|\\s+)`, 'gi');
+            const regex = new RegExp(`([.?!]\\s+|^|\\n\\n)${word}(?:\\s*,\\s*|\\s+)`, 'gi');
             applyChanges(regex, (match, prefix) => {
-                const seed = match.charCodeAt(0) + match.length;
-                if (seededRandom(seed) <= 0.65) { // 65% replacement rate
-                    const randomConnector = connectors[Math.floor(seededRandom(seed + 1) * connectors.length)];
-                    // Clean up the connector: if it already ends with punctuation, use as-is
-                    const trimmed = randomConnector.trim();
-                    const endsWithPunct = /[,;:\-]$/.test(trimmed);
-                    // Simple conjunctions (And, But, So, Or, Yet) don't need a comma
-                    const simpleConjunctions = ['and', 'but', 'so', 'or', 'yet', 'plus', 'also', 'now', 'still'];
-                    const isSimple = simpleConjunctions.includes(trimmed.replace(/[^a-zA-Z]/g, '').toLowerCase());
-                    
-                    let connector = preserveCase(word, trimmed);
-                    if (!endsWithPunct && !isSimple) {
-                        connector += ',';
-                    }
-                    return `${prefix}${connector} `;
+                const chosenRaw = connectors[transitionCursor % connectors.length];
+                transitionCursor++;
+                const trimmed = chosenRaw.trim();
+                const endsWithPunct = /[,;:\-]$/.test(trimmed);
+                const simpleConjunctions = ['and', 'but', 'so', 'or', 'yet', 'plus', 'also', 'now', 'still'];
+                const isSimple = simpleConjunctions.includes(trimmed.replace(/[^a-zA-Z]/g, '').toLowerCase());
+
+                let connector = preserveCase(word, trimmed);
+                if (!endsWithPunct && !isSimple) {
+                    connector += ',';
                 }
-                return match;
+                return `${prefix}${connector} `;
             }, 'pass_5_transition_replacement');
         });
     };
@@ -275,9 +276,7 @@ export function quickFix(text, patterns, style = 'casual') {
     // PASS 6: Sentence Restructuring
     const applyPass6 = () => {
         if (!SENTENCE_RESTRUCTURES || !Array.isArray(SENTENCE_RESTRUCTURES)) return;
-        
         SENTENCE_RESTRUCTURES.forEach(rule => {
-            // Each rule has {pattern: RegExp, transform: function|string}
             const handler = typeof rule.transform === 'function' ? rule.transform : (rule.replacement || rule.transform);
             if (handler) {
                 applyChanges(rule.pattern, handler, 'pass_6_sentence_restructuring');
@@ -288,38 +287,34 @@ export function quickFix(text, patterns, style = 'casual') {
     // PASS 7: Sentence Starter Variation
     const applyPass7 = () => {
         if (!SENTENCE_STARTERS) return;
-        
-        // This is complex to do with pure regex on the whole block.
-        // We will split into sentences for this pass.
+        const styleKey = (style === 'executive' || style === 'technical') ? 'professional' : (style === 'creative' ? 'conversational' : style);
         const sentences = currentText.split(/([.?!]\s+)/);
         let sameStarterCount = 0;
         let lastStarter = '';
-        
+        let starterIdx = 0;
+
         for (let i = 0; i < sentences.length; i += 2) {
             const sentence = sentences[i];
             const firstWordMatch = sentence.match(/^\s*([a-zA-Z]+)/);
-            
             if (firstWordMatch) {
                 const starter = firstWordMatch[1].toLowerCase();
                 if (starter === lastStarter && starter.length > 1) {
                     sameStarterCount++;
-                    if (sameStarterCount >= 2) { // 3rd sentence with same starter
-                        const starters = SENTENCE_STARTERS[style] || SENTENCE_STARTERS['casual'] || ['Well, ', 'In fact, ', 'Actually, '];
-                        const randomStarter = starters[Math.floor(Math.random() * starters.length)];
-                        
+                    if (sameStarterCount >= 2) {
+                        const starters = SENTENCE_STARTERS[styleKey] || SENTENCE_STARTERS['casual'] || ['Well, ', 'In fact, ', 'Actually, '];
+                        const chosenStarter = starters[starterIdx % starters.length];
+                        starterIdx++;
                         const oldSentence = sentences[i];
                         sentences[i] = sentence.replace(/^\s*([a-zA-Z]+)/, (match) => {
-                            return match.replace(firstWordMatch[1], preserveCase(firstWordMatch[1], randomStarter + firstWordMatch[1].toLowerCase()));
+                            return match.replace(firstWordMatch[1], preserveCase(firstWordMatch[1], chosenStarter + firstWordMatch[1].toLowerCase()));
                         });
-                        
                         allChanges.push({
                             original: oldSentence,
                             replacement: sentences[i],
-                            position: 0, // Approx
+                            position: 0,
                             pass: 'pass_7_starter_variation'
                         });
-                        
-                        sameStarterCount = 0; // Reset
+                        sameStarterCount = 0;
                     }
                 } else {
                     sameStarterCount = 0;
@@ -327,102 +322,101 @@ export function quickFix(text, patterns, style = 'casual') {
                 }
             }
         }
-        
         currentText = sentences.join('');
     };
 
-    // PASS 8: Sentence Length Variation
+    // PASS 8: Sentence Length Variation (Paragraph-Aware)
     const applyPass8 = () => {
-        // Only split truly long sentences (40+ words) at natural conjunction points
-        // Be conservative: only split if both halves are substantial
-        const sentences = currentText.split(/(?<=[.!?])\s+/);
-        const rebuilt = [];
-        let changed = false;
-        
-        for (const sentence of sentences) {
-            const wordCount = sentence.split(/\s+/).length;
-            if (wordCount >= 40) {
-                // Try to split at ", and " or ", but " or "; " (natural break points only)
-                const splitMatch = sentence.match(/^(.{60,}?,)\s+(and|but|so)\s+(.{20,})$/s);
-                if (splitMatch && splitMatch[1] && splitMatch[3]) {
-                    const part2 = splitMatch[3].charAt(0).toUpperCase() + splitMatch[3].slice(1);
-                    rebuilt.push(splitMatch[1].trimEnd() + '.');
-                    rebuilt.push(part2);
-                    allChanges.push({
-                        original: sentence.substring(0, 50) + '...',
-                        replacement: '(split into two sentences)',
-                        position: 0,
-                        pass: 'pass_8_length_variation'
-                    });
-                    changed = true;
-                    continue;
+        const paragraphs = currentText.split(/\n{2,}/);
+        let anyChanged = false;
+        const processedParagraphs = paragraphs.map(para => {
+            const sentences = para.split(/(?<=[.!?])\s+/);
+            const rebuilt = [];
+            for (const sentence of sentences) {
+                const wordCount = sentence.split(/\s+/).length;
+                if (wordCount >= 38) {
+                    const splitMatch = sentence.match(/^(.{55,}?,)\s+(and|but|so)\s+(.{20,})$/s);
+                    if (splitMatch && splitMatch[1] && splitMatch[3]) {
+                        const part2 = splitMatch[3].charAt(0).toUpperCase() + splitMatch[3].slice(1);
+                        rebuilt.push(splitMatch[1].trimEnd().replace(/,$/, '') + '.');
+                        rebuilt.push(part2);
+                        allChanges.push({
+                            original: sentence.substring(0, 50) + '...',
+                            replacement: '(split into two sentences)',
+                            position: 0,
+                            pass: 'pass_8_length_variation'
+                        });
+                        anyChanged = true;
+                        continue;
+                    }
                 }
+                rebuilt.push(sentence);
             }
-            rebuilt.push(sentence);
-        }
-        
-        if (changed) {
-            currentText = rebuilt.join(' ');
+            return rebuilt.join(' ');
+        });
+        if (anyChanged) {
+            currentText = processedParagraphs.join('\n\n');
         }
     };
 
-    // PASS 9: Natural Imperfections
+    // PASS 9: Natural Rhythm & Voice Polish
     const applyPass9 = () => {
-        if (style === 'academic') return; // Minimal imperfections for academic
-        if (style === 'professional') return; // Keep professional clean
-        
-        // Add occasional em-dashes for explanatory "which is" / "that is" clauses
-        // Only match when followed by an adjective/noun (not a verb like -ing/-ed)
+        if (style === 'academic' || style === 'professional' || style === 'executive' || style === 'technical') return;
         const dashRegex = /\b(\w+)\s+(which is|that is)\s+((?!\w+(?:ing|ed|s)\b)[a-z]\w*)\b/gi;
         applyChanges(dashRegex, (match, word1, transition, word2) => {
-            if (Math.random() > 0.8) {
-                return `${word1} — ${transition} — ${word2}`;
-            }
-            return match;
+            return `${word1} (${transition} ${word2})`;
         }, 'pass_9_natural_imperfections');
     };
 
-    // Common abbreviations that should NOT trigger capitalization after their period
     const ABBREVIATIONS = new Set(['vs', 'etc', 'e.g', 'i.e', 'dr', 'mr', 'mrs', 'ms', 'prof', 'sr', 'jr', 'st', 'ave', 'approx', 'dept', 'est', 'min', 'max', 'govt', 'inc', 'corp', 'ltd', 'no', 'vol', 'fig', 'eq', 'ref']);
 
-    // PASS 10: Final Cleanup
-    const applyPass10 = () => {
-        // Fix a/an article mismatches caused by vocabulary swaps
-        const vowelSound = /^[aeiou]/i;
-        // "an" before consonant sound → "a"
-        applyChanges(/\b(an)\s+([bcdfghjklmnpqrstvwxyz]\w*)/gi, (match, article, word) => {
-            return `${preserveCase(article, 'a')} ${word}`;
-        }, 'pass_10_cleanup');
-        // "a" before vowel sound → "an"
-        applyChanges(/\b(a)\s+([aeiou]\w*)/gi, (match, article, word) => {
-            // Skip "a us..." "a un..." "a eu..." (sounds like 'yoo')
-            if (/^(uni|use|us[eu]|ubi|uro|eur|util)/i.test(word)) return match;
-            return `${preserveCase(article, 'an')} ${word}`;
-        }, 'pass_10_cleanup');
+    // Phonetic helper for "a" vs "an" self-healer
+    const requiresAnArticle = (rawWord) => {
+        const clean = rawWord.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '');
+        if (!clean) return false;
+        // Acronyms / initialisms pronounced with a leading vowel sound (e.g. "an LLM", "an API", "an MBA", "an SQL", "an HTTP")
+        if (/^(?:LLM|API|SDK|SLA|SLO|SRE|SSO|SSH|SQL|HTML|HTTP|HTTPS|MCP|NLI|AST|RFC|ORM|FPS|GPU|CPU|IDE|MBA|MVP|nda|faq)$/i.test(clean) && clean === clean.toUpperCase()) {
+            return /^(?:[AEFILMNORSX]|HTTP|HTML|SQL|LLM|API|SDK|SLA|SLO|SRE|SSO|SSH|MCP|NLI|AST|RFC|ORM|FPS|MBA|MVP)/i.test(clean);
+        }
+        // Silent 'h' words -> "an hour", "an honest", "an honor", "an heir"
+        if (/^(?:hour|honest|honor|honour|heir|herb\b)/i.test(clean)) return true;
+        // 'yoo' or 'wun' sounds starting with vowels -> "a unique", "a uniform", "a user", "a European", "a one-time"
+        if (/^(?:uni|use|us[eu]|ubi|uro|eur|util|one\b|once\b)/i.test(clean)) return false;
+        return /^[aeiou]/i.test(clean);
+    };
 
-        // Remove double spaces
-        applyChanges(/ {2,}/g, ' ', 'pass_10_cleanup');
-        
-        // Fix spacing around punctuation (use function callbacks, not string backrefs)
-        applyChanges(/\s+([.,?!])/g, (match, punct) => punct, 'pass_10_cleanup');
+    // PASS 10: Phonetic a/an Self-Healer & Multi-Paragraph Safe Cleanup
+    const applyPass10 = () => {
+        applyChanges(/\b(a|an)\s+([a-zA-Z0-9][\w-]*)/gi, (match, article, nextWord) => {
+            const wantAn = requiresAnArticle(nextWord);
+            const targetArticle = wantAn ? 'an' : 'a';
+            const casedArticle = preserveCase(article, targetArticle);
+            return `${casedArticle} ${nextWord}`;
+        }, 'pass_10_phonetic_a_an_healer');
+
+        // Collapse horizontal double spaces without destroying paragraph breaks (\n\n)
+        applyChanges(/[^\S\r\n]{2,}/g, ' ', 'pass_10_cleanup');
+        applyChanges(/\n{3,}/g, '\n\n', 'pass_10_cleanup');
+
+        // Fix spacing around punctuation without eating newlines
+        applyChanges(/[^\S\r\n]+([.,?!])/g, (match, punct) => punct, 'pass_10_cleanup');
         applyChanges(/([.,?!])([a-zA-Z])/g, (match, punct, letter) => `${punct} ${letter}`, 'pass_10_cleanup');
-        
-        // Capitalize after sentence-ending punctuation, but not after abbreviations
-        applyChanges(/(\w+)([.?!])\s+([a-z])/g, (match, prevWord, punct, letter) => {
-            // Don't capitalize after abbreviations or single uppercase letters (like initials)
+
+        // Capitalize after sentence-ending punctuation
+        applyChanges(/(\w+)([.?!])([^\S\r\n]+|\n+)([a-z])/g, (match, prevWord, punct, ws, letter) => {
             const lower = prevWord.toLowerCase();
             if (ABBREVIATIONS.has(lower) || (prevWord.length <= 3 && /^[A-Z]+$/.test(prevWord))) {
                 return match;
             }
-            // Don't capitalize after decimal numbers
             if (/^\d+$/.test(prevWord)) {
                 return match;
             }
-            return `${prevWord}${punct} ${letter.toUpperCase()}`;
+            return `${prevWord}${punct}${ws}${letter.toUpperCase()}`;
         }, 'pass_10_cleanup');
     };
 
-    // Execute pipeline
+    // Execute 11-step deterministic pipeline
+    applyPass0();
     applyPass1();
     applyPass2();
     applyPass3();
@@ -437,9 +431,9 @@ export function quickFix(text, patterns, style = 'casual') {
     // Restore protected blocks
     currentText = restoreBlocks(currentText, protectedInfo.blocks);
 
-    return { 
-        text: currentText.trim(), 
-        changes: allChanges 
+    return {
+        text: currentText.trim(),
+        changes: allChanges
     };
 }
 

@@ -10,6 +10,8 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ModernOps888/humaniser/releases/tag/v1.2.0"><img src="https://img.shields.io/badge/release-v1.2.0-10b981" alt="Release v1.2.0" /></a>
+  <img src="https://img.shields.io/badge/tests-18%2F18_passed-brightgreen" alt="Tests 18/18 Passed" />
   <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies" />
   <img src="https://img.shields.io/badge/voice_modes-6-00f0ff" alt="6 Voice Modes" />
   <img src="https://img.shields.io/badge/API-optional-blue" alt="API Optional" />

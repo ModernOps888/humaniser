@@ -83,12 +83,20 @@
         <div class="style-select-wrapper">
           <label for="style-select" class="style-label">Voice Mode</label>
           <select id="style-select" class="style-select">
-            <option value="casual">Natural / Casual</option>
-            <option value="conversational" selected>Conversational</option>
-            <option value="professional">Executive / Professional</option>
-            <option value="technical">Technical</option>
-            <option value="academic">Academic</option>
-            <option value="creative">Creative</option>
+            <option value="chat" selected>Chat / Everyday</option>
+            <option value="casual">Casual &amp; Natural</option>
+            <option value="email">Email &amp; Outreach</option>
+            <option value="executive">Executive &amp; Pitch</option>
+            <option value="academic">Academic &amp; Formal</option>
+            <option value="technical">Technical &amp; Direct</option>
+          </select>
+        </div>
+        <div class="style-select-wrapper">
+          <label for="intensity-select" class="style-label">Depth</label>
+          <select id="intensity-select" class="style-select">
+            <option value="light">Light Polish</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="deep">Deep</option>
           </select>
         </div>
         <div class="action-buttons">
@@ -106,6 +114,14 @@
           </button>
         </div>
       </div>
+    </section>
+
+    <!-- Cleaning toggles (mirrors the live workbench's options strip) -->
+    <section class="options-bar" aria-label="Quick Fix options">
+      <label class="option-toggle"><input type="checkbox" id="opt-strip-wrappers" checked> Strip ChatGPT/Claude intros &amp; sign-offs</label>
+      <label class="option-toggle"><input type="checkbox" id="opt-emdash" checked> Fix AI em-dashes (—)</label>
+      <label class="option-toggle"><input type="checkbox" id="opt-contractions" checked> Natural contractions (don't, it's)</label>
+      <label class="option-toggle option-auto"><input type="checkbox" id="opt-auto"> Auto-humanise as you type</label>
     </section>
 
     <!-- Editor Panels -->
@@ -140,6 +156,8 @@
         <div class="panel-header">
           <h2 class="panel-title">Humanised Output</h2>
           <div class="panel-actions">
+            <button id="btn-variation" class="panel-btn panel-btn-text" title="Cycle alternative phrasings (4 variations)" disabled>↻ Variation v1</button>
+            <button id="btn-highlight" class="panel-btn panel-btn-text" title="Highlight the terms Quick Fix inserted" aria-pressed="false" disabled>Highlight changes</button>
             <button id="btn-copy" class="panel-btn" title="Copy to clipboard" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>
@@ -151,6 +169,7 @@
         <div class="editor-body">
           <div id="output-text" class="editor-output" aria-label="Humanised output text"></div>
         </div>
+        <div id="output-metrics" class="output-metrics" aria-live="polite"></div>
       </div>
     </section>
 
@@ -177,8 +196,8 @@
             <select id="api-provider" class="style-select">
               <option value="openai">OpenAI (GPT-4o-mini)</option>
               <option value="gemini">Google Gemini (Gemini 2.5 Flash)</option>
-              <option value="anthropic">Anthropic (Claude 3.5 Haiku)</option>
-              <option value="deepseek">DeepSeek (DeepSeek-V3)</option>
+              <option value="anthropic">Anthropic (Claude Haiku 5.5)</option>
+              <option value="deepseek">DeepSeek (deepseek-chat)</option>
             </select>
           </div>
           <div class="setting-row">

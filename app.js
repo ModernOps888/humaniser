@@ -20,6 +20,13 @@ try {
   quickFix = humaniser.quickFix || quickFix;
   deepRewrite = humaniser.deepRewrite || deepRewrite;
 } catch (e) { console.warn('Humaniser: humaniser.js import failed', e); }
+let analyzeAIProbabilities = null;
+let highlightChangedTerms = () => null;
+try {
+  const workbench = await import('./js/workbench.js');
+  analyzeAIProbabilities = workbench.analyzeAIProbabilities;
+  highlightChangedTerms = workbench.highlightChangedTerms;
+} catch (e) { console.warn('Humaniser: workbench.js import failed', e); }
 try {
   const history = await import('./js/history.js');
   getEntries = history.getEntries || getEntries;
@@ -66,9 +73,23 @@ try {
   const statReading = document.getElementById('stat-reading');
   const statPassive = document.getElementById('stat-passive');
   const patternCount = document.getElementById('pattern-count');
+
+  const styleSelect = document.getElementById('style-select');
+  const intensitySelect = document.getElementById('intensity-select');
+  const optStripWrappers = document.getElementById('opt-strip-wrappers');
+  const optEmDash = document.getElementById('opt-emdash');
+  const optContractions = document.getElementById('opt-contractions');
+  const optAuto = document.getElementById('opt-auto');
+  const btnVariation = document.getElementById('btn-variation');
+  const btnHighlight = document.getElementById('btn-highlight');
+  const outputMetrics = document.getElementById('output-metrics');
   
   // State
   let currentAnalysis = null;
+  let variationSeed = 0;          // 0..3, cycled by the Variation button
+  let showHighlights = false;     // "Highlight changes" toggle
+  let lastOutput = '';            // plain-text output (copy/download source of truth)
+  let lastChangedTerms = [];      // terms inserted by the last Quick Fix
   const gauge = createGauge(document.getElementById('gauge-container'));
   
   // Theme Setup
@@ -130,11 +151,14 @@ try {
     clearHighlights(highlightLayer);
     btnQuickFix.disabled = true;
     
-    // Auto analyse debounce
+    // Auto analyse debounce (+ auto-humanise when enabled)
     clearTimeout(textarea._analyseTimeout);
     textarea._analyseTimeout = setTimeout(() => {
-      if (hasText) performAnalysis();
-    }, 800);
+      if (hasText) {
+        performAnalysis();
+        if (optAuto.checked) runQuickFix({ quiet: true });
+      }
+    }, optAuto.checked ? 350 : 800);
   });
   
   // Perform Analysis
@@ -187,24 +211,92 @@ try {
   };
   
   btnAnalyse.addEventListener('click', performAnalysis);
+
+  // Render output: plain text, or with <mark> around inserted terms when "Highlight changes" is on.
+  // Built with DOM nodes (never innerHTML) so pasted text can't inject markup.
+  const renderOutput = () => {
+    outputText.textContent = '';
+    const segments = showHighlights ? highlightChangedTerms(lastOutput, lastChangedTerms) : null;
+    if (!segments) {
+      outputText.textContent = lastOutput;
+    } else {
+      for (const seg of segments) {
+        if (seg.isMatch) {
+          const mark = document.createElement('mark');
+          mark.className = 'change-mark';
+          mark.textContent = seg.part;
+          outputText.appendChild(mark);
+        } else {
+          outputText.appendChild(document.createTextNode(seg.part));
+        }
+      }
+    }
+    const hasOutput = lastOutput.length > 0;
+    btnCopy.disabled = !hasOutput;
+    btnDownload.disabled = !hasOutput;
+    btnHighlight.disabled = !hasOutput || lastChangedTerms.length === 0;
+  };
+
+  // Site metrics line under the output (AI risk %, burstiness CV, dashes/watermarks).
+  const renderMetrics = (inputText, outputStr) => {
+    if (!analyzeAIProbabilities || !outputStr) { outputMetrics.textContent = ''; return; }
+    const before = analyzeAIProbabilities(inputText);
+    const after = analyzeAIProbabilities(outputStr);
+    outputMetrics.textContent =
+      `AI risk ${before.rawAIScore}% → ${after.rawAIScore}% · burstiness CV ${before.burstinessCV} → ${after.burstinessCV}` +
+      ` · dashes/watermarks ${before.emDashCount + before.watermarkChars} → ${after.emDashCount + after.watermarkChars}`;
+  };
+
+  const getQuickFixOptions = () => ({
+    intensity: intensitySelect.value,
+    useContractions: optContractions.checked,
+    stripChatWrappers: optStripWrappers.checked,
+    normalizeEmDashes: optEmDash.checked,
+    variationSeed,
+  });
   
   // Fixes
-  btnQuickFix.addEventListener('click', () => {
-    if (!currentAnalysis) return;
-    const style = document.getElementById('style-select').value;
-    const result = quickFix(textarea.value, currentAnalysis.patterns, style);
-    const outputStr = typeof result === 'object' ? result.text : result;
-    const changeCount = typeof result === 'object' ? (result.changes || []).length : 0;
-    outputText.textContent = outputStr;
-    btnCopy.disabled = false;
-    btnDownload.disabled = false;
+  const runQuickFix = ({ quiet = false } = {}) => {
+    const input = textarea.value;
+    if (!input.trim()) return;
+    if (!currentAnalysis) currentAnalysis = analyse(input);
+    const style = styleSelect.value;
+    const result = quickFix(input, currentAnalysis.patterns, style, getQuickFixOptions());
+    lastOutput = result.text || '';
+    lastChangedTerms = result.changedTerms || [];
+    renderOutput();
+    renderMetrics(input, lastOutput);
+    btnVariation.disabled = false;
     
-    const newAnalysis = analyse(outputStr);
-    const newScore = newAnalysis.score;
+    const newScore = analyse(lastOutput).score;
     gauge.update(newScore);
-    saveEntry({ originalText: textarea.value, humanisedText: outputStr, originalScore: currentAnalysis.score, humanisedScore: newScore, mode: 'Quick Fix', style });
-    showToast(`Applied ${changeCount} fix${changeCount !== 1 ? 'es' : ''} successfully!`);
+    if (!quiet) {
+      saveEntry({ originalText: input, humanisedText: lastOutput, originalScore: currentAnalysis.score, humanisedScore: newScore, mode: 'Quick Fix', style });
+      const n = result.changeCount || 0;
+      showToast(`Applied ${n} fix${n !== 1 ? 'es' : ''} successfully!`);
+    }
+  };
+
+  btnQuickFix.addEventListener('click', () => runQuickFix());
+
+  btnVariation.addEventListener('click', () => {
+    variationSeed = (variationSeed + 1) % 4;
+    btnVariation.textContent = `↻ Variation v${variationSeed + 1}`;
+    runQuickFix({ quiet: true });
   });
+
+  btnHighlight.addEventListener('click', () => {
+    showHighlights = !showHighlights;
+    btnHighlight.setAttribute('aria-pressed', String(showHighlights));
+    btnHighlight.textContent = showHighlights ? 'Changes highlighted' : 'Highlight changes';
+    renderOutput();
+  });
+
+  // Re-run automatically when an option changes and auto-humanise is on
+  [styleSelect, intensitySelect, optStripWrappers, optEmDash, optContractions].forEach((el) => {
+    el.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
+  });
+  optAuto.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
   
   btnDeepRewrite.addEventListener('click', async () => {
     const settings = JSON.parse(localStorage.getItem('humaniser_settings') || '{}');
@@ -222,9 +314,10 @@ try {
         showToast(result.error, 'error');
         return;
       }
-      outputText.textContent = outputStr;
-      btnCopy.disabled = false;
-      btnDownload.disabled = false;
+      lastOutput = outputStr || '';
+      lastChangedTerms = [];
+      renderOutput();
+      renderMetrics(textarea.value, lastOutput);
       
       const newAnalysis = analyse(outputStr);
       const newScore = newAnalysis.score;
@@ -251,14 +344,16 @@ try {
   
   btnClear.addEventListener('click', () => {
     textarea.value = '';
-    outputText.textContent = '';
+    lastOutput = '';
+    lastChangedTerms = [];
+    renderOutput();
+    outputMetrics.textContent = '';
     clearHighlights(highlightLayer);
     gauge.update(0);
     btnAnalyse.disabled = true;
     btnQuickFix.disabled = true;
     btnDeepRewrite.disabled = true;
-    btnCopy.disabled = true;
-    btnDownload.disabled = true;
+    btnVariation.disabled = true;
     statWords.textContent = '0';
     statSentences.textContent = '0';
     statReading.textContent = '—';
@@ -267,12 +362,12 @@ try {
   });
   
   btnCopy.addEventListener('click', () => {
-    navigator.clipboard.writeText(outputText.textContent);
+    navigator.clipboard.writeText(lastOutput);
     showToast('Copied to clipboard!');
   });
   
   btnDownload.addEventListener('click', () => {
-    const blob = new Blob([outputText.textContent], { type: 'text/plain' });
+    const blob = new Blob([lastOutput], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -343,7 +438,9 @@ try {
         });
         div.addEventListener('click', () => {
           textarea.value = e.originalText || '';
-          outputText.textContent = e.humanisedText || '';
+          lastOutput = e.humanisedText || '';
+          lastChangedTerms = [];
+          renderOutput();
           textarea.dispatchEvent(new Event('input'));
           closeHistory();
         });

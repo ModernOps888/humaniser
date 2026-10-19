@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Make AI-generated text sound like a real person wrote it.</strong><br/>
-  A zero-dependency, privacy-first web app that detects and transforms robotic AI writing patterns into natural, human prose.
+  A zero-dependency, privacy-first web app that detects robotic AI writing patterns and rewrites them into plainer, more natural prose.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
   <a href="https://infinitytechstack.uk/consulting"><img src="https://img.shields.io/badge/Enterprise-Security_Audits-ff00e5" alt="Enterprise Audits" /></a>
 </p>
 
-> 🌐 **Live Interactive Workbench (Free, Zero Sign-Up)**: Try the full copy-paste workbench with instant auto-humanize, 6 voice modes, anti-repetition phrase ledger, watermark/em-dash cleaner, and side-by-side diff view at [**infinitytechstack.uk/humaniser →**](https://infinitytechstack.uk/humaniser)
+> 🌐 **Live Interactive Workbench (Free, Zero Sign-Up)**: The Quick Fix engine in this repo is a vanilla-JS port of the engine behind [**infinitytechstack.uk/humaniser →**](https://infinitytechstack.uk/humaniser) (same six voice modes, chat-wrapper / em-dash / watermark cleaner, variation reroll and "Highlight changes" view).
 >
 > 🛡️ **Enterprise AI Production Audits & Systems Advisory**: Deploying LLM-driven content pipelines, autonomous agents, or customer-facing AI where synthetic phrasing, hallucinations, or prompt leakage compromise your brand? We deliver **fixed-scope, 3-day enterprise AI audits** (£4,500 with runnable remediation PRs) and **principal systems advisory** (£650–£7,500). [**Explore Packages & Book a Call →**](https://infinitytechstack.uk/consulting)
 
@@ -26,111 +26,118 @@
 
 ## Why Humaniser?
 
-AI writing tools are everywhere. But they all sound the same — *"In today's fast-paced world, it is crucial to leverage cutting-edge technology..."* — and AI detectors are getting better at flagging this.
+AI writing tools all tend to sound the same: *"In today's fast-paced world, it is crucial to leverage cutting-edge technology..."*
 
-Humaniser sits between you and your audience. Paste any text, and it instantly detects 180+ AI writing patterns, scores how robotic it sounds, and transforms it into something a real person would actually write.
+Paste any text and Humaniser highlights the AI-style patterns it finds, gives the text a 0–100 score, and rewrites it with a deterministic, rule-based engine that runs entirely in your browser.
 
-**No account. No server. No data leaves your browser** (unless you opt into Deep Rewrite with your own API key).
+**No account. No server. Quick Fix makes no network requests.** Text only leaves your browser if you opt into Deep Rewrite with your own API key.
 
 ---
 
 ## Features
 
-### 🔍 Detection Engine (10-Pass Analysis)
+### 🔍 Detection (`js/detector.js` → `analyse()`)
 
-| Pass | What It Detects | Example |
-|------|----------------|---------|
-| **Vocabulary** | 180+ AI-overused words | *delve, crucial, leverage, utilize, landscape, paradigm* |
-| **Phrases** | 80+ cliché AI phrases | *"In today's fast-paced world", "It is worth noting that"* |
-| **Transitions** | Overused sentence starters | *However, Moreover, Furthermore, Additionally* |
-| **Contractions** | Missing natural contractions | *"do not" → "don't", "it is" → "it's"* |
-| **Hedging** | Excessive qualifying language | *"It is important to note that", "one could argue"* |
-| **Fillers** | Redundant sentence starters | *"That being said,", "Simply put,"* |
-| **Structure** | Repetitive sentence openers | 3+ sentences starting with the same word |
-| **Uniformity** | AI-like sentence length patterns | Coefficient of variation < 0.3 |
-| **Passive Voice** | Excessive passive construction | *"was implemented" → "we implemented"* |
-| **Em-dashes** | Overuse of dashes | More than 2 per 500 words |
+| Check | What it flags | Data |
+|------|----------------|------|
+| **Vocabulary** | AI-overused words (*delve, crucial, leverage, landscape*) | 217 words (`AI_WORDS`) |
+| **Phrases** | Cliché AI phrases (*"It is worth noting that"*) | 104 patterns (`AI_PHRASES`) |
+| **Transitions** | Sentences opening with *However, Moreover, Furthermore…* | 25 words (`TRANSITION_WORDS`) |
+| **Contractions** | Uncontracted forms (*"do not"*, *"it is"*) | 45 pairs (`CONTRACTION_MAP`) |
+| **Hedging** | Qualifying filler (*"It is important to note that"*) | 22 patterns (`HEDGING_PHRASES`) |
+| **Fillers** | Redundant sentence starters (*"That being said,"*) | 20 patterns (`FILLER_STARTERS`) |
+| **Repetitive starters** | 3+ sentences starting with the same word | — |
+| **Uniformity** | Sentence-length coefficient of variation < 0.3 (4+ sentences) | — |
+| **Passive voice** | Passive constructions in more than 30% of sentences | — |
+| **Em-dashes** | More than 2 dashes per 500 words | — |
 
-### ⚡ Deterministic Transformation Pipeline (No API Required)
+### ⚡ Quick Fix — deterministic rewrite, no API (`js/workbench.js` → `transformHumaniser()`)
 
-An 11-stage transformation pipeline that runs entirely in your browser while preserving multi-paragraph structure:
+Ported from the live workbench. Stages run in this order:
 
-0. **Watermark, Chat-Preamble & Em-Dash Cleaner** — Strips invisible zero-width Unicode watermarks (`\u200B`–`\u2060`), removes robotic chat openers (*"Certainly! Here is..."*), and normalizes mechanical em-dash overuse
-1. **Filler Removal** — Strips hedging phrases and redundant starters
-2. **Punctuation-Safe Phrase Simplification** — 67+ wordy constructions simplified (*"in order to" → "to"*, *"due to the fact that" → "because"*) with strict word/hyphen boundary guards
-3. **Vocabulary Swap + Anti-Repetition Phrase Ledger** — Replaces AI buzzwords with natural alternatives while tracking global document frequency and a 12-token sliding window so the engine never repeats the same synonym
-4. **Voice-Calibrated Contraction Insertion** — Adds natural contractions tuned to the selected voice mode
-5. **Transition Orchestrator** — Deterministically rotates natural sentence connectors across paragraphs without adjacent repetition
-6. **Sentence Restructuring** — 21 structural rules that transform robotic AI clause templates
-7. **Starter Variation** — Breaks up repetitive sentence beginnings
-8. **Paragraph-Aware Length Variation** — Splits overly long 38+ word sentences at natural conjunction boundaries while preserving `\n\n` multi-paragraph layout
-9. **Natural Rhythm & Voice Polish** — Converts stiff relative clauses into natural parentheticals
-10. **Phonetic `a/an` Grammar Self-Healer** — Automatically repairs article agreement after vocabulary swaps, including phonetic exceptions (*"an hour"*, *"an honest"*, *"an LLM"*, *"an API"*, *"an MBA"*, *"a unique"*, *"a uniform"*, *"a one-time"*)
+1. **Watermark cleaner** — strips zero-width characters (U+200B, U+200C, U+200D, U+FEFF, U+2060), turns non-breaking spaces into spaces and curly quotes into straight quotes.
+2. **Code & URL protection** — fenced code blocks, inline `code` and `http(s)://` URLs are swapped out for placeholders and restored byte-for-byte at the end (`protectBlocks()` / `restoreBlocks()`).
+3. **Chat-wrapper stripper** (toggle) — removes *"Certainly! Here is…:"* preambles and *"Let me know if you'd like…"* sign-offs; in Chat, Casual and Email modes it also rewrites `- **Point:** text` bullets as `- Point — text`.
+4. **Template rewrites** — *"It's not just about X, it's about Y"*, *"Not only does X…, but it also…"*, *"Whether you're a X or a Y,"*.
+5. **Transition orchestrator** — replaces *Furthermore / Moreover / However / Therefore / In conclusion…* with a voice-specific pool, before word-level swaps so they never collide.
+6. **Phrase replacements** — 93 multi-word phrases, matched with punctuation-safe boundaries (`buildPhraseRegex()`).
+7. **Vocabulary replacements** — 308 AI words; the **Depth** setting picks which severities are replaced (Light ≥ 4, Balanced ≥ 3, Deep: all).
+8. **Anti-repetition ledger** — every choice in stages 4–7 goes through `pickUniqueAlternative()`, which tracks used alternatives across the whole document so the same replacement isn't reused while unused options remain.
+9. **Em-dash normaliser** (toggle) — `—`, `–` and `--` become commas, alternating with ` - ` (Chat/Casual) or `; ` (other modes).
+10. **Cadence splitter** (Balanced/Deep only) — splits *", thereby …ing"*, *", ensuring that"*, *", which in turn"* clauses and breaks sentences of 24+ words at *", and" / ", while"*, working paragraph by paragraph so `\n\n` breaks are preserved; also drops a paragraph opener that repeats an earlier paragraph's opener.
+11. **Contractions** (toggle) — inserts contractions; Academic mode never inserts them and expands *n't* forms instead.
+12. **a/an self-healer** — `fixEnglishArticlesAndGrammar()` fixes articles by sound (*an hour, a unique, a user, a one-time, a URL, an LLM, an API*) and removes doubled words left by adjacent swaps (*"to to"*).
 
-### ✨ Deep Rewrite (Multi-Provider AI API)
+> [!NOTE]
+> The port fixes a few bugs found in the site source while porting (listed at the top of `js/workbench.js`), e.g. template rewrites leaking a literal `$3` into the output and `"a URL"` being turned into `"an URL"`.
 
-Bring your own API key for context-aware rewriting across 4 major frontier and open model providers:
-- **OpenAI** (`gpt-4o-mini`)
-- **Google Gemini** (`gemini-2.5-flash`)
-- **Anthropic** (`claude-haiku-4-5` / `claude-sonnet-5-5`)
-- **DeepSeek** (`deepseek-chat` / DeepSeek-V3)
+### 🎛️ Workbench controls (`index.html`, `app.js`)
 
-Your keys stay in your browser's `localStorage` only — never sent to any intermediary server, only directly to the chosen AI provider.
+- **Six voice modes** (table below) and a **Depth** selector (Light Polish / Balanced / Deep).
+- **Toggles**: strip chat intros & sign-offs, fix em-dashes, natural contractions.
+- **Auto-humanise as you type** — re-runs Quick Fix ~350 ms after you stop typing or change an option.
+- **↻ Variation** — cycles four alternative phrasings (`variationSeed` 0–3).
+- **Highlight changes** — marks every term Quick Fix inserted in the output panel (`highlightChangedTerms()`). This highlights inserted terms; it is not a line-by-line diff.
+- **Metrics line** under the output — AI-risk %, burstiness CV and dash/watermark counts, before → after (`analyzeAIProbabilities()`, the live site's scorer).
 
-### 🎨 Six Voice Modes
+### 🎨 Six Voice Modes (`VOICE_MODES` in `js/workbench.js`)
 
-| Voice Mode | Contractions | Vocabulary & Cadence | Tone |
-|------------|-------------|----------------------|------|
-| **Natural / Casual** | Aggressive (90%) | Everyday, direct alternatives | Relaxed, human |
-| **Conversational** | Aggressive (90%) | Warm, engaging connectors & parentheticals | Approachable, fluid |
-| **Executive / Professional** | Moderate (55%) | Crisp, board-ready phrasing | Clean, authoritative |
-| **Technical** | Moderate (55%) | Preserves domain precision & acronyms | Clear, engineering-grade |
-| **Academic** | Minimal (15%) | Formal, measured lexical choices | Scholarly, objective |
-| **Creative** | Expressive (90%) | High burstiness & varied cadence | Vivid, narrative |
+All six share the same pipeline; they differ in the rules below (checked by `tests/regression.mjs`, which asserts every pair of modes gives different output).
 
-### 📊 Real-Time Dashboard
+| Voice Mode | Transition pool | Em-dash replacement | Bold-bullet cleanup | Contractions |
+|------------|-----------------|---------------------|---------------------|--------------|
+| **Chat / Everyday** | chat (*Beyond that, Plus, On top of that…*) | `, ` / ` - ` | yes | inserted |
+| **Casual & Natural** | casual (*Plus, Still, At the end of the day…*) | `, ` / ` - ` | yes | inserted |
+| **Email & Outreach** | email (*Along with that, That said…*) | `, ` / `; ` | yes | inserted |
+| **Executive & Pitch** | executive (*Equally important, Bottom line:…*) | `, ` / `; ` | no | inserted |
+| **Academic & Formal** | academic (*In parallel, Accordingly, In sum…*) | `, ` / `; ` | no | expanded (*do not, cannot*) |
+| **Technical & Direct** | technical (*Separately, Summary:…*) | `, ` / `; ` | no | inserted |
 
-- **Animated SVG gauge** — colour-coded score from 0 (AI) to 100 (Human)
+Each mode also starts the alternative rotation at a different offset, and long-sentence connectors differ (*Plus / At the same time* for Chat & Casual, *Meanwhile / In parallel* for the others).
+
+### ✨ Deep Rewrite — bring your own key (`js/humaniser.js` → `deepRewrite()`)
+
+| Provider | Model ID (`DEEP_REWRITE_MODELS`) |
+|----------|----------------------------------|
+| OpenAI | `gpt-4o-mini` |
+| Google Gemini | `gemini-2.5-flash` |
+| Anthropic | `claude-haiku-5-5` |
+| DeepSeek | `deepseek-chat` |
+
+Requests go straight from your browser to the provider (Anthropic calls send the `anthropic-dangerous-direct-browser-access` header that browser access requires). Your key is stored in `localStorage` only.
+
+### 📊 Dashboard (`js/gauge.js`, `js/highlighter.js`, `app.js`)
+
+- **Animated SVG gauge** — colour-coded score from 0 (AI) to 100 (human)
 - **Live stats** — word count, sentences, reading level, passive voice %
-- **Pattern highlighting** — inline marks with hover tooltips showing what was detected
-- **Category breakdown** — see exactly how many vocabulary, phrase, structure issues found
+- **Pattern highlighting** — detected spans are colour-coded by category behind the input text
+- **Category legend** — count of vocabulary, phrase, structure, tone, flow and hedging findings
 
-### 🕐 History & Privacy
+### 🕐 History (`js/history.js`)
 
-- Last 20 analyses saved in localStorage
-- Compare before/after scores
-- One-click restore of any previous text
-- **Everything stays on your machine**
+- Last 20 Quick Fix / Deep Rewrite runs saved in `localStorage`
+- Shows before → after score for each entry
+- Click an entry to restore its input and output
 
 ---
 
 ## Quick Start
 
-### Option 1: Just Open It
-
 ```bash
-# Clone and serve
 git clone https://github.com/ModernOps888/humaniser.git
 cd humaniser
-npx serve . -l 3000
+python -m http.server 3000   # or: npx serve . -l 3000 / php -S localhost:3000
 ```
 
-Then open [http://localhost:3000](http://localhost:3000)
+Then open [http://localhost:3000](http://localhost:3000). There's no build step and no `npm install`: it's HTML, CSS and ES modules. (ES modules need a server; opening `index.html` via `file://` won't work.)
 
-### Option 2: Any Static Server
-
-Drop the files on any web server. No build step, no npm install, no bundler. It's just HTML, CSS, and ES modules.
+## Tests
 
 ```bash
-# Python
-python -m http.server 3000
-
-# PHP
-php -S localhost:3000
-
-# Or just drag index.html into your browser
-# (Note: ES modules require a server, file:// won't work)
+node tests/regression.mjs
 ```
+
+Zero-dependency (`node:assert`). It covers: no `(that is` / `(which is` artefacts or leaked `$1`–`$9` on the sample corpus in every mode × depth × variation; `\n\n` paragraph preservation; a/an cases; zero-width character stripping; every voice mode producing non-empty, mutually different output; fenced code, inline code and URLs passing through byte-identical; and README/code agreement on model IDs and voice modes.
 
 ---
 
@@ -139,51 +146,53 @@ php -S localhost:3000
 ### Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Presentation Layer                  │
-│  index.html  │  index.css  │  app.js                │
-│  gauge.js    │  highlighter.js                       │
-├─────────────────────────────────────────────────────┤
-│                 Business Logic Layer                 │
-│  detector.js (10-pass analysis engine)              │
-│  humaniser.js (10-pass transformation pipeline)     │
-├─────────────────────────────────────────────────────┤
-│                    Data Layer                        │
-│  patterns.js (180+ words, 80+ phrases, 67 rewrites) │
-│  history.js (localStorage CRUD)                     │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ Presentation   index.html · index.css · app.js           │
+│                js/gauge.js · js/highlighter.js           │
+├──────────────────────────────────────────────────────────┤
+│ Logic          js/detector.js   analyse() → score/patterns│
+│                js/workbench.js  transformHumaniser(),     │
+│                                 analyzeAIProbabilities()  │
+│                js/humaniser.js  quickFix(), deepRewrite() │
+├──────────────────────────────────────────────────────────┤
+│ Data           js/patterns.js       detector tables       │
+│                js/workbench-data.js Quick Fix tables      │
+│                js/history.js        localStorage history  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-### Scoring Algorithm
+### Scoring (`analyse()` in `js/detector.js`)
 
-- Starts at **100** (perfect human score)
-- Each detected pattern subtracts: `severity × category_weight`
-- **Diminishing returns**: repeated patterns in the same category have progressively less impact
-- **Bonus points**: +5 for natural contraction use, +5 for varied sentence length
-- Calibrated so typical ChatGPT output scores **15–30** and well-written human text scores **75–95**
+- Starts at **100**
+- Each detected pattern subtracts `severity × category_weight`
+- **Diminishing returns** within a category (100%, 80%, 60% … floor 20%)
+- **Bonuses**: +5 if contraction rate > 50%, +5 if sentence-length CV > 0.4
 
-### Detection Categories
+| Category | Weight |
+|----------|--------|
+| Vocabulary | 1.5× |
+| AI Phrases | 2.5× |
+| Structure | 2.0× |
+| Tone | 1.0× |
+| Flow | 1.5× |
+| Hedging | 1.5× |
 
-| Category | Weight | Colour |
-|----------|--------|--------|
-| Vocabulary | 1.5× | 🔴 Terracotta |
-| AI Phrases | 2.5× | 🟣 Purple |
-| Structure | 2.0× | 🔵 Blue |
-| Tone | 1.0× | 🟠 Orange |
-| Flow | 1.5× | 🟢 Teal |
-| Hedging | 1.5× | 🟡 Amber |
+> [!IMPORTANT]
+> The score is Humaniser's own heuristic. It is **not** an external AI detector, and a high score doesn't mean third-party detectors will pass the text.
 
 ---
 
 ## Example
 
-**Before** (Score: 14/100)
-> In today's fast-paced world, it is crucial to leverage cutting-edge technology in order to facilitate seamless digital transformation. Furthermore, organizations must navigate the ever-evolving landscape of innovation. It is important to note that a comprehensive, holistic approach is paramount.
+Input: the three-paragraph sample corpus in `tests/regression.mjs`. Output from Quick Fix, **Chat / Everyday**, Balanced, Variation v1:
 
-**After Quick Fix** (Score: 72/100)
-> In today's fast-paced world, it's important to use the latest technology to help with smooth digital transformation. Also, organizations must handle the ever-evolving field of innovation. It's important to note that a complete, whole approach is essential.
+> In today's technological field, artificial intelligence has emerged as a truly revolutionary force that's at core reshaping how organizations operate. Make sure to understand that applying these new innovations requires a thorough and end-to-end approach. The frictionless integration of machine learning into existing workflows highlights the creative spirit that drives modern enterprises forward.
+>
+> Along with that, note that the many-sided nature of this life-changing technology shows the need for careful planning and reliable system. Stakeholders must manage the detailed challenges that arise when embarking on such never before seen endeavors. The key role of data can't be overstated, it's the basis upon which all meaningful insights are built.
+>
+> On top of that, organizations that make use of the full potential of artificial intelligence are poised to gain a significant competitive advantage. This pioneering pattern shift has the potential to remake everything from customer engagement to operational efficiency. Taken together, you should build a culture of continuous learning and adaptability to help thrive in this ever-changing space of technological advancement. Without a doubt, the future belongs to those who embrace innovation completely.
 
-**35 changes** applied across 5 passes — no API call needed.
+`analyse()` score: **11 → 75**. It's rule-based, so expect rough spots: here *"paradigm shift"* became *"pattern shift"*, *"robust infrastructure"* became *"reliable system"*, and an em-dash became a comma splice. Read the output before you use it.
 
 ---
 
@@ -191,16 +200,20 @@ php -S localhost:3000
 
 ```
 humaniser/
-├── index.html          # App shell — semantic HTML, inline SVG icons, modals
-├── index.css           # Design system — 2 themes, responsive, animations
-├── app.js              # Controller — events, state, orchestration
+├── index.html            # App shell: dashboard, options strip, editor panels, modals
+├── index.css             # Design system: light/dark themes, responsive layout
+├── app.js                # Controller: events, state, Quick Fix / Deep Rewrite orchestration
 ├── js/
-│   ├── patterns.js     # 180+ AI words, 80+ phrases, 67 phrase rewrites
-│   ├── detector.js     # 10-pass analysis engine with weighted scoring
-│   ├── humaniser.js    # 10-pass transformation pipeline
-│   ├── history.js      # localStorage history CRUD
-│   ├── gauge.js        # Animated SVG semicircular score gauge
-│   └── highlighter.js  # Inline pattern highlighting with tooltips
+│   ├── workbench.js      # Quick Fix engine (port of the live workbench) + site scorer
+│   ├── workbench-data.js # 308 AI words, 93 phrases, contraction maps (from the site)
+│   ├── humaniser.js      # quickFix() wrapper + deepRewrite() providers
+│   ├── detector.js       # analyse(): 10 checks, weighted score
+│   ├── patterns.js       # Detector tables (words, phrases, transitions, hedges, fillers)
+│   ├── history.js        # localStorage history (20 entries)
+│   ├── gauge.js          # Animated SVG score gauge
+│   └── highlighter.js    # Category-coloured highlighting of detected patterns
+├── tests/
+│   └── regression.mjs    # node tests/regression.mjs
 ├── logo.jpg
 ├── LICENSE
 └── README.md
@@ -212,28 +225,24 @@ humaniser/
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl + Enter` | Run Quick Fix |
-| `Ctrl + Shift + Enter` | Run Deep Rewrite |
+| `Ctrl + Enter` | Analyse |
+| `Ctrl + Shift + Enter` | Quick Fix |
 | `Escape` | Close modals/panels |
 
 ---
 
 ## Browser Support
 
-Works in all modern browsers that support ES modules:
-- Chrome 61+
-- Firefox 60+
-- Safari 11+
-- Edge 16+
+Needs ES modules, top-level `await` and RegExp lookbehind: Chrome/Edge 89+, Firefox 89+, Safari 16.4+.
 
 ---
 
 ## Privacy
 
-- **Zero tracking** — no analytics, no cookies, no fingerprinting
-- **Zero network requests** — Quick Fix runs 100% client-side
-- **API keys stored locally** — in your browser's localStorage, never transmitted elsewhere
-- **Deep Rewrite** — only sends text to OpenAI/Gemini if you explicitly choose to, using YOUR API key
+- **No analytics, no cookies.** The page does load web fonts from Google Fonts.
+- **Quick Fix and Analyse run 100% client-side** and make no network requests.
+- **API keys** are stored in your browser's `localStorage` and only sent to the provider you choose.
+- **Deep Rewrite** sends your text to OpenAI, Google, Anthropic or DeepSeek only when you click it, using your key.
 
 ---
 
@@ -241,9 +250,8 @@ Works in all modern browsers that support ES modules:
 
 Contributions are welcome! Some ideas:
 
-- Add more AI patterns to `patterns.js`
-- Improve sentence restructuring rules
-- Add new writing styles
+- Add patterns to `js/workbench-data.js` (Quick Fix) or `js/patterns.js` (detector)
+- Add cases to `tests/regression.mjs`
 - Add browser extension support
 - Add more LLM providers to Deep Rewrite
 
@@ -257,5 +265,5 @@ MIT — do whatever you want with it.
 
 <p align="center">
   <strong>Humaniser</strong> — Your text, your voice.<br/>
-  Built with vanilla HTML, CSS, and JavaScript. No frameworks. No build tools. No nonsense.
+  Built with vanilla HTML, CSS, and JavaScript. No frameworks. No build tools.
 </p>

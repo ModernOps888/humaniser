@@ -1,0 +1,27 @@
+{
+  "name": "humaniser",
+  "version": "2.5.0",
+  "description": "Zero-dependency, 100% client-side AI Text Humanizer & 5-Pillar Detector (v2.5 Studio)",
+  "type": "module",
+  "main": "js/workbench.js",
+  "scripts": {
+    "start": "npx --yes serve . -l 3000",
+    "test": "node tests/regression.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ModernOps888/humaniser.git"
+  },
+  "homepage": "https://infinitytechstack.uk/humaniser",
+  "keywords": [
+    "ai-humanizer",
+    "ai-humaniser",
+    "ai-detector",
+    "stylometry",
+    "burstiness",
+    "nlp",
+    "academic-writing",
+    "zero-dependency"
+  ],
+  "license": "MIT"
+}

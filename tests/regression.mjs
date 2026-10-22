@@ -9,8 +9,14 @@ import { quickFix, DEEP_REWRITE_MODELS } from '../js/humaniser.js';
 import {
   transformHumaniser,
   fixEnglishArticlesAndGrammar,
+  applyEnglishDialect,
+  conjugateParticipleToPresent3rd,
+  conjugateParticipleToInfinitive,
   highlightChangedTerms,
   analyzeAIProbabilities,
+  computeWordLevelDiff,
+  analyzeSentenceHeatmap,
+  computeReadabilityAndDetectors,
   VOICE_MODES,
   INTENSITIES,
 } from '../js/workbench.js';
@@ -167,6 +173,88 @@ test('highlightChangedTerms segments re-join to the exact output and mark insert
 test('analyzeAIProbabilities never returns NaN (e.g. "constructor", "toString")', () => {
   const r = analyzeAIProbabilities('The constructor calls toString and hasOwnProperty. Then it returns.');
   assert.ok(Number.isFinite(r.rawAIScore) && Number.isFinite(r.humanScore), JSON.stringify(r));
+});
+
+console.log('v2.5 Academic Shield, LaTeX, Currency & Abbreviations');
+test('APA/Harvard/IEEE citations, DOIs, arXiv IDs, and LaTeX math survive byte-identical', () => {
+  const academicSample =
+    'In the contemporary academic landscape, prior literature delves into attention scaling (Vaswani et al., 2017, pp. 142–158; Smith & Jones, 2024) and [1–3]. Furthermore, we evaluate $$\\mathcal{L}(\\theta) = \\sum_{i=1}^N x_i$$ and inline $E = mc^2$ across doi:10.1038/s41586-024-07998-x and arXiv:2401.12345v2.';
+  const out = transformHumaniser(academicSample, { style: 'academic' }).text;
+  assert.ok(out.includes('(Vaswani et al., 2017, pp. 142–158; Smith & Jones, 2024)'), out);
+  assert.ok(out.includes('[1–3]'), out);
+  assert.ok(out.includes('$$\\mathcal{L}(\\theta) = \\sum_{i=1}^N x_i$$'), out);
+  assert.ok(out.includes('$E = mc^2$'), out);
+  assert.ok(out.includes('doi:10.1038/s41586-024-07998-x'), out);
+  assert.ok(out.includes('arXiv:2401.12345v2'), out);
+});
+test('Currency amounts ($20 ... $50) on the same line are never mistaken for LaTeX math', () => {
+  const priceSample = 'Furthermore, teams paid $20 for the starter tier to delve into analytics and $50 for the enterprise tier.';
+  const out = transformHumaniser(priceSample, { style: 'chat' }).text;
+  assert.ok(out.includes('$20') && out.includes('$50'), out);
+  assert.ok(!/\bdelve\b/i.test(out), out);
+});
+test('Scholarly abbreviations (et al., e.g., i.e., cf., vs., Fig.) do not trigger false mid-sentence capitalisation', () => {
+  const abbrSample = 'Prior studies (e.g. reward modelling vs. direct preference optimisation, cf. Fig. 4) delve into alignment.';
+  const out = transformHumaniser(abbrSample, { style: 'academic' }).text;
+  assert.ok(out.includes('e.g. reward') && out.includes('vs. direct'), out);
+});
+
+console.log('v2.5 Context-Aware Semantic Collocation Shield (13 domains)');
+test('Domain-specific literal compound terms are preserved 100% intact while surrounding AI clichés are rewritten', () => {
+  const domainCases = [
+    { input: 'Furthermore, stochastic gradient descent navigates the non-convex loss landscape to delve into minima.', mustKeep: 'loss landscape' },
+    { input: 'Moreover, the CFO reduced financial leverage and leverage ratios to bolster the balance sheet.', mustKeep: 'financial leverage' },
+    { input: 'Additionally, the heterogeneous platinum catalyst bed accelerates ammonia synthesis in the realm of industrial chemistry.', mustKeep: 'platinum catalyst' },
+    { input: 'In conclusion, the medieval Bayeux Tapestry and tapestry weavers serve as a testament to Norman craftsmanship.', mustKeep: 'Bayeux Tapestry' },
+    { input: 'Furthermore, the testator signed his Last Will and Testament and read the Old Testament.', mustKeep: 'Last Will and Testament' },
+    { input: 'Moreover, as a Peer of the Realm, he utilized statutory authority.', mustKeep: 'Peer of the Realm' },
+    { input: 'Additionally, the autopilot navigated the aircraft through the strait using Bluetooth beacons and beacon frames.', mustKeep: 'Bluetooth beacons' },
+    { input: 'Furthermore, engineers utilized the automated test harness and wiring harness to validate the orbital trajectory across the electromagnetic spectrum.', mustKeep: 'test harness' },
+    { input: 'Moreover, the shopping center signed an anchor tenant and updated its HTML anchor text.', mustKeep: 'anchor tenant' },
+  ];
+  for (const tc of domainCases) {
+    const out = transformHumaniser(tc.input, { style: 'executive' }).text;
+    assert.ok(out.includes(tc.mustKeep), `Lost collocation "${tc.mustKeep}" in: ${out}`);
+  }
+});
+
+console.log('v2.5 Poetic Verse, Contractions, Dialect & Morphology');
+test('Poetic verse stanzas with trailing em-dashes preserve every single \\n line break', () => {
+  const poem = 'Across the quiet realm of winter skies —\nA tapestry of silver starlight lies,\nFurthermore, the morning beacon glows —\nAnd delves into the valley where it flows.';
+  const out = transformHumaniser(poem, { style: 'casual' }).text;
+  assert.equal(out.split('\n').length, 4, `Line breaks lost:\n${out}`);
+});
+test('Smart "it\'s" disambiguation ("it has been" vs "it is") and modal "have to" guard', () => {
+  const text = "It's been a long journey and it's clear that you have to test carefully.";
+  const acad = transformHumaniser(text, { style: 'academic' }).text;
+  assert.ok(acad.includes('It has been') && acad.includes('it is clear'), acad);
+  const casual = transformHumaniser('You have to verify that they have to pass.', { style: 'casual', useContractions: true }).text;
+  assert.ok(!/you've to|they've to/i.test(casual), casual);
+});
+test('UK (en-GB) and US (en-US) dialect calibration converts spelling accurately', () => {
+  const uk = applyEnglishDialect('We optimize and analyze organization behavior at the center.', 'uk');
+  assert.equal(uk, 'We optimise and analyse organisation behaviour at the centre.');
+  const us = applyEnglishDialect(uk, 'us');
+  assert.equal(us, 'We optimize and analyze organization behavior at the center.');
+});
+test('Morphological participle converter handles irregular, -y, -e, and consonant-doubling verbs', () => {
+  assert.equal(conjugateParticipleToPresent3rd('reducing'), 'reduces');
+  assert.equal(conjugateParticipleToPresent3rd('amplifying'), 'amplifies');
+  assert.equal(conjugateParticipleToPresent3rd('creating'), 'creates');
+  assert.equal(conjugateParticipleToPresent3rd('fostering'), 'fosters');
+  assert.equal(conjugateParticipleToInfinitive('reducing'), 'reduce');
+  assert.equal(conjugateParticipleToInfinitive('amplifying'), 'amplify');
+});
+test('Visual Word Diff, Sentence Heatmap, and Multi-Detector Radar return valid structures', () => {
+  const out = transformHumaniser(CORPUS, { style: 'chat' });
+  const diff = computeWordLevelDiff(CORPUS, out.text);
+  assert.ok(diff.length > 0 && diff.some((d) => d.type === 'added') && diff.some((d) => d.type === 'removed'));
+  const heatmap = analyzeSentenceHeatmap(out.text, 'chat');
+  assert.ok(heatmap.length >= 6 && heatmap.every((h) => ['high', 'moderate', 'human'].includes(h.tier)));
+  const afterStats = analyzeAIProbabilities(out.text, 'chat');
+  const radar = computeReadabilityAndDetectors(out.text, afterStats.rawAIScore, afterStats.burstinessCV, afterStats.lexicalDiversityTTR, afterStats.emDashCount);
+  assert.equal(radar.detectors.length, 4);
+  assert.ok(Number.isFinite(radar.fkGrade));
 });
 
 console.log('README / code agreement');

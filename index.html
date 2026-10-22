@@ -99,6 +99,14 @@
             <option value="deep">Deep</option>
           </select>
         </div>
+        <div class="style-select-wrapper">
+          <label for="dialect-select" class="style-label">Dialect</label>
+          <select id="dialect-select" class="style-select" title="Calibrate UK (en-GB) or US (en-US) spelling">
+            <option value="auto" selected>Auto Dialect</option>
+            <option value="uk">🇬🇧 UK (en-GB)</option>
+            <option value="us">🇺🇸 US (en-US)</option>
+          </select>
+        </div>
         <div class="action-buttons">
           <button id="btn-analyse" class="btn btn-secondary" disabled>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -121,6 +129,7 @@
       <label class="option-toggle"><input type="checkbox" id="opt-strip-wrappers" checked> Strip ChatGPT/Claude intros &amp; sign-offs</label>
       <label class="option-toggle"><input type="checkbox" id="opt-emdash" checked> Fix AI em-dashes (—)</label>
       <label class="option-toggle"><input type="checkbox" id="opt-contractions" checked> Natural contractions (don't, it's)</label>
+      <label class="option-toggle"><input type="checkbox" id="opt-protect-citations" checked> Protect citations, LaTeX &amp; domain terms</label>
       <label class="option-toggle option-auto"><input type="checkbox" id="opt-auto"> Auto-humanise as you type</label>
     </section>
 
@@ -130,6 +139,9 @@
         <div class="panel-header">
           <h2 class="panel-title">Original Text</h2>
           <div class="panel-actions">
+            <button id="btn-sample" class="panel-btn panel-btn-text" title="Load sample text for active Voice Mode">✨ Sample</button>
+            <input type="file" id="file-upload" accept=".txt,.md,.tex,.csv" style="display:none">
+            <button id="btn-upload" class="panel-btn panel-btn-text" title="Upload .txt, .md, or .tex file (100% local)">📂 Upload</button>
             <button id="btn-paste" class="panel-btn" title="Paste from clipboard">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
             </button>
@@ -154,9 +166,17 @@
 
       <div class="editor-panel panel-output">
         <div class="panel-header">
-          <h2 class="panel-title">Humanised Output</h2>
+          <div class="output-header-left">
+            <h2 class="panel-title">Humanised Output</h2>
+            <div class="view-mode-tabs" role="tablist" aria-label="Output view mode">
+              <button id="view-clean" class="view-tab active" data-view="clean" role="tab" aria-selected="true">Clean</button>
+              <button id="view-diff" class="view-tab" data-view="diff" role="tab" aria-selected="false">Word Diff</button>
+              <button id="view-heatmap" class="view-tab" data-view="heatmap" role="tab" aria-selected="false">Sentence Heatmap</button>
+            </div>
+          </div>
           <div class="panel-actions">
             <button id="btn-variation" class="panel-btn panel-btn-text" title="Cycle alternative phrasings (4 variations)" disabled>↻ Variation v1</button>
+            <button id="btn-second-pass" class="panel-btn panel-btn-text" title="Feed output back into input for a 2nd polish pass" disabled>🔁 2nd Pass</button>
             <button id="btn-highlight" class="panel-btn panel-btn-text" title="Highlight the terms Quick Fix inserted" aria-pressed="false" disabled>Highlight changes</button>
             <button id="btn-copy" class="panel-btn" title="Copy to clipboard" disabled>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -170,6 +190,7 @@
           <div id="output-text" class="editor-output" aria-label="Humanised output text"></div>
         </div>
         <div id="output-metrics" class="output-metrics" aria-live="polite"></div>
+        <div id="detector-radar" class="detector-radar" aria-live="polite"></div>
       </div>
     </section>
 

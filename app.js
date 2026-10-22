@@ -22,10 +22,18 @@ try {
 } catch (e) { console.warn('Humaniser: humaniser.js import failed', e); }
 let analyzeAIProbabilities = null;
 let highlightChangedTerms = () => null;
+let computeWordLevelDiff = () => [];
+let analyzeSentenceHeatmap = () => [];
+let computeReadabilityAndDetectors = () => null;
+let PRESETS = [];
 try {
   const workbench = await import('./js/workbench.js');
   analyzeAIProbabilities = workbench.analyzeAIProbabilities;
   highlightChangedTerms = workbench.highlightChangedTerms;
+  computeWordLevelDiff = workbench.computeWordLevelDiff || computeWordLevelDiff;
+  analyzeSentenceHeatmap = workbench.analyzeSentenceHeatmap || analyzeSentenceHeatmap;
+  computeReadabilityAndDetectors = workbench.computeReadabilityAndDetectors || computeReadabilityAndDetectors;
+  PRESETS = workbench.PRESETS || [];
 } catch (e) { console.warn('Humaniser: workbench.js import failed', e); }
 try {
   const history = await import('./js/history.js');
@@ -76,20 +84,30 @@ try {
 
   const styleSelect = document.getElementById('style-select');
   const intensitySelect = document.getElementById('intensity-select');
+  const dialectSelect = document.getElementById('dialect-select');
   const optStripWrappers = document.getElementById('opt-strip-wrappers');
   const optEmDash = document.getElementById('opt-emdash');
   const optContractions = document.getElementById('opt-contractions');
+  const optProtectCitations = document.getElementById('opt-protect-citations');
   const optAuto = document.getElementById('opt-auto');
   const btnVariation = document.getElementById('btn-variation');
+  const btnSecondPass = document.getElementById('btn-second-pass');
   const btnHighlight = document.getElementById('btn-highlight');
+  const btnSample = document.getElementById('btn-sample');
+  const btnUpload = document.getElementById('btn-upload');
+  const fileUpload = document.getElementById('file-upload');
+  const viewTabs = document.querySelectorAll('.view-tab');
   const outputMetrics = document.getElementById('output-metrics');
+  const detectorRadar = document.getElementById('detector-radar');
   
   // State
   let currentAnalysis = null;
   let variationSeed = 0;          // 0..3, cycled by the Variation button
   let showHighlights = false;     // "Highlight changes" toggle
+  let outputViewMode = 'clean';   // 'clean' | 'diff' | 'heatmap'
   let lastOutput = '';            // plain-text output (copy/download source of truth)
   let lastChangedTerms = [];      // terms inserted by the last Quick Fix
+  let lastProtectedCount = 0;     // citations/LaTeX/code/collocations shielded
   const gauge = createGauge(document.getElementById('gauge-container'));
   
   // Theme Setup
@@ -212,39 +230,118 @@ try {
   
   btnAnalyse.addEventListener('click', performAnalysis);
 
-  // Render output: plain text, or with <mark> around inserted terms when "Highlight changes" is on.
+  // Render output: Clean (with optional <mark>), Visual Word Diff, or Sentence AI Heatmap.
   // Built with DOM nodes (never innerHTML) so pasted text can't inject markup.
   const renderOutput = () => {
     outputText.textContent = '';
-    const segments = showHighlights ? highlightChangedTerms(lastOutput, lastChangedTerms) : null;
-    if (!segments) {
-      outputText.textContent = lastOutput;
-    } else {
-      for (const seg of segments) {
-        if (seg.isMatch) {
-          const mark = document.createElement('mark');
-          mark.className = 'change-mark';
-          mark.textContent = seg.part;
-          outputText.appendChild(mark);
+    const hasOutput = lastOutput.length > 0;
+
+    if (hasOutput && outputViewMode === 'diff') {
+      const diffTokens = computeWordLevelDiff(textarea.value, lastOutput);
+      for (const tok of diffTokens) {
+        if (tok.type === 'removed') {
+          const del = document.createElement('del');
+          del.className = 'diff-del';
+          del.textContent = tok.text;
+          outputText.appendChild(del);
+        } else if (tok.type === 'added') {
+          const ins = document.createElement('ins');
+          ins.className = 'diff-ins';
+          ins.textContent = tok.text;
+          outputText.appendChild(ins);
         } else {
-          outputText.appendChild(document.createTextNode(seg.part));
+          outputText.appendChild(document.createTextNode(tok.text));
+        }
+      }
+    } else if (hasOutput && outputViewMode === 'heatmap') {
+      const heatmapItems = analyzeSentenceHeatmap(lastOutput, styleSelect.value);
+      let currentPara = 0;
+      heatmapItems.forEach((item, idx) => {
+        if (idx > 0 && item.paragraphIndex > currentPara) {
+          outputText.appendChild(document.createTextNode('\n\n'));
+          currentPara = item.paragraphIndex;
+        } else if (idx > 0) {
+          outputText.appendChild(document.createTextNode(' '));
+        }
+        const span = document.createElement('span');
+        span.className = 'heatmap-sent';
+        span.setAttribute('data-tier', item.tier);
+        span.title = `${item.reason} (${item.wordCount} words)`;
+        span.appendChild(document.createTextNode(item.text));
+        const badge = document.createElement('span');
+        badge.className = 'heatmap-badge';
+        badge.textContent = `[${item.wordCount}w]`;
+        span.appendChild(badge);
+        outputText.appendChild(span);
+      });
+    } else {
+      const segments = showHighlights ? highlightChangedTerms(lastOutput, lastChangedTerms) : null;
+      if (!segments) {
+        outputText.textContent = lastOutput;
+      } else {
+        for (const seg of segments) {
+          if (seg.isMatch) {
+            const mark = document.createElement('mark');
+            mark.className = 'change-mark';
+            mark.textContent = seg.part;
+            outputText.appendChild(mark);
+          } else {
+            outputText.appendChild(document.createTextNode(seg.part));
+          }
         }
       }
     }
-    const hasOutput = lastOutput.length > 0;
+
     btnCopy.disabled = !hasOutput;
     btnDownload.disabled = !hasOutput;
-    btnHighlight.disabled = !hasOutput || lastChangedTerms.length === 0;
+    if (btnSecondPass) btnSecondPass.disabled = !hasOutput;
+    btnHighlight.disabled = !hasOutput || lastChangedTerms.length === 0 || outputViewMode !== 'clean';
   };
 
-  // Site metrics line under the output (AI risk %, burstiness CV, dashes/watermarks).
+  // Site metrics line + Multi-Detector Bypass Radar under the output
   const renderMetrics = (inputText, outputStr) => {
-    if (!analyzeAIProbabilities || !outputStr) { outputMetrics.textContent = ''; return; }
-    const before = analyzeAIProbabilities(inputText);
-    const after = analyzeAIProbabilities(outputStr);
+    if (!analyzeAIProbabilities || !outputStr) {
+      outputMetrics.textContent = '';
+      if (detectorRadar) detectorRadar.textContent = '';
+      return;
+    }
+    const protectCites = optProtectCitations ? optProtectCitations.checked : true;
+    const style = styleSelect.value;
+    const intensity = intensitySelect.value;
+    const before = analyzeAIProbabilities(inputText, style, protectCites, intensity);
+    const after = analyzeAIProbabilities(outputStr, style, protectCites, intensity);
     outputMetrics.textContent =
       `AI risk ${before.rawAIScore}% → ${after.rawAIScore}% · burstiness CV ${before.burstinessCV} → ${after.burstinessCV}` +
-      ` · dashes/watermarks ${before.emDashCount + before.watermarkChars} → ${after.emDashCount + after.watermarkChars}`;
+      ` · TTR ${after.lexicalDiversityTTR}% · dashes/watermarks ${before.emDashCount + before.watermarkChars} → ${after.emDashCount + after.watermarkChars}` +
+      (lastProtectedCount > 0 ? ` · 🛡️ ${lastProtectedCount} protected` : '');
+
+    if (detectorRadar && computeReadabilityAndDetectors) {
+      detectorRadar.textContent = '';
+      const radar = computeReadabilityAndDetectors(
+        outputStr,
+        after.rawAIScore,
+        after.burstinessCV,
+        after.lexicalDiversityTTR,
+        after.emDashCount
+      );
+      if (radar) {
+        for (const det of radar.detectors) {
+          const pill = document.createElement('span');
+          pill.className = 'radar-pill';
+          if (det.humanPct < 65) pill.setAttribute('data-warn', 'true');
+          pill.title = det.focus;
+          pill.appendChild(document.createTextNode(`${det.name}: `));
+          const strong = document.createElement('strong');
+          strong.textContent = `${det.humanPct}% Human`;
+          pill.appendChild(strong);
+          detectorRadar.appendChild(pill);
+        }
+        const fkPill = document.createElement('span');
+        fkPill.className = 'radar-pill';
+        fkPill.textContent = `Readability: Grade ${radar.fkGrade} (${radar.fkLabel})`;
+        detectorRadar.appendChild(fkPill);
+      }
+    }
   };
 
   const getQuickFixOptions = () => ({
@@ -252,6 +349,8 @@ try {
     useContractions: optContractions.checked,
     stripChatWrappers: optStripWrappers.checked,
     normalizeEmDashes: optEmDash.checked,
+    protectAcademicCitations: optProtectCitations ? optProtectCitations.checked : true,
+    englishDialect: dialectSelect ? dialectSelect.value : 'auto',
     variationSeed,
   });
   
@@ -264,6 +363,7 @@ try {
     const result = quickFix(input, currentAnalysis.patterns, style, getQuickFixOptions());
     lastOutput = result.text || '';
     lastChangedTerms = result.changedTerms || [];
+    lastProtectedCount = result.protectedBlocksCount || 0;
     renderOutput();
     renderMetrics(input, lastOutput);
     btnVariation.disabled = false;
@@ -285,6 +385,60 @@ try {
     runQuickFix({ quiet: true });
   });
 
+  if (btnSecondPass) {
+    btnSecondPass.addEventListener('click', () => {
+      if (!lastOutput.trim()) return;
+      textarea.value = lastOutput;
+      variationSeed = (variationSeed + 1) % 4;
+      btnVariation.textContent = `↻ Variation v${variationSeed + 1}`;
+      performAnalysis();
+      runQuickFix({ quiet: true });
+      showToast('Applied 2nd-pass refinement!', 'info');
+    });
+  }
+
+  viewTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      outputViewMode = tab.getAttribute('data-view') || 'clean';
+      viewTabs.forEach((t) => {
+        const isActive = t === tab;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+      });
+      renderOutput();
+    });
+  });
+
+  if (btnSample) {
+    btnSample.addEventListener('click', () => {
+      const style = styleSelect.value;
+      const preset = PRESETS.find((p) => p.style === style) || PRESETS[0];
+      if (preset && preset.sample) {
+        textarea.value = preset.sample;
+        performAnalysis();
+        runQuickFix({ quiet: true });
+        showToast(`Loaded ${preset.name} sample!`);
+      }
+    });
+  }
+
+  if (btnUpload && fileUpload) {
+    btnUpload.addEventListener('click', () => fileUpload.click());
+    fileUpload.addEventListener('change', (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        textarea.value = String(reader.result || '');
+        performAnalysis();
+        runQuickFix({ quiet: true });
+        showToast(`Loaded ${file.name}`);
+        fileUpload.value = '';
+      };
+      reader.readAsText(file);
+    });
+  }
+
   btnHighlight.addEventListener('click', () => {
     showHighlights = !showHighlights;
     btnHighlight.setAttribute('aria-pressed', String(showHighlights));
@@ -293,9 +447,11 @@ try {
   });
 
   // Re-run automatically when an option changes and auto-humanise is on
-  [styleSelect, intensitySelect, optStripWrappers, optEmDash, optContractions].forEach((el) => {
-    el.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
-  });
+  [styleSelect, intensitySelect, dialectSelect, optStripWrappers, optEmDash, optContractions, optProtectCitations]
+    .filter(Boolean)
+    .forEach((el) => {
+      el.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
+    });
   optAuto.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
   
   btnDeepRewrite.addEventListener('click', async () => {
@@ -346,8 +502,10 @@ try {
     textarea.value = '';
     lastOutput = '';
     lastChangedTerms = [];
+    lastProtectedCount = 0;
     renderOutput();
     outputMetrics.textContent = '';
+    if (detectorRadar) detectorRadar.textContent = '';
     clearHighlights(highlightLayer);
     gauge.update(0);
     btnAnalyse.disabled = true;

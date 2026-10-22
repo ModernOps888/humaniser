@@ -17,12 +17,9 @@
   <img src="https://img.shields.io/badge/API-optional-blue" alt="API Optional" />
   <img src="https://img.shields.io/badge/license-MIT-orange" alt="MIT License" />
   <a href="https://infinitytechstack.uk/humaniser"><img src="https://img.shields.io/badge/Live_Workbench-infinitytechstack.uk-10b981" alt="Live Workbench" /></a>
-  <a href="https://infinitytechstack.uk/consulting"><img src="https://img.shields.io/badge/Enterprise-Security_Audits-ff00e5" alt="Enterprise Audits" /></a>
 </p>
 
 > 🌐 **Live Interactive Workbench (Free, Zero Sign-Up)**: The Quick Fix engine in this repo is a vanilla-JS port of the engine behind [**infinitytechstack.uk/humaniser →**](https://infinitytechstack.uk/humaniser) (same six voice modes, chat-wrapper / em-dash / watermark cleaner, variation reroll and "Highlight changes" view).
->
-> 🛡️ **Enterprise AI Production Audits & Systems Advisory**: Deploying LLM-driven content pipelines, autonomous agents, or customer-facing AI where synthetic phrasing, hallucinations, or prompt leakage compromise your brand? We deliver **fixed-scope, 3-day enterprise AI audits** (£4,500 with runnable remediation PRs) and **principal systems advisory** (£650–£7,500). [**Explore Packages & Book a Call →**](https://infinitytechstack.uk/consulting)
 
 ---
 

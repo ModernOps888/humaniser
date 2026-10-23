@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.deepseek.com; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>Humaniser — Make Your Writing Sound Human</title>
   <meta name="description" content="A premium writing tool for humanising AI-generated text.">
   
@@ -12,7 +14,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Source+Serif+4:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Source+Serif+4:wght@400;500;600&display=swap" rel="stylesheet" referrerpolicy="no-referrer">
   
   <link rel="stylesheet" href="index.css">
   
@@ -224,11 +226,19 @@
           <div class="setting-row">
             <label for="api-key">API Key</label>
             <div class="input-with-action">
-              <input type="password" id="api-key" class="text-input" placeholder="sk-..., AIza..., etc.">
+              <input type="password" id="api-key" class="text-input" placeholder="sk-..., AIza..., etc." autocomplete="off">
               <button id="btn-toggle-key" class="panel-btn" title="Show/hide key" aria-label="Toggle API key visibility">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
+          </div>
+          <div class="setting-row">
+            <label for="api-storage-mode">Key Storage</label>
+            <select id="api-storage-mode" class="style-select" title="Choose how your API key is stored in the browser">
+              <option value="session" selected>Session Only (sessionStorage — cleared when tab closes)</option>
+              <option value="memory">Memory Only (RAM — cleared on page reload)</option>
+              <option value="local">Persistent (localStorage — saved across restarts)</option>
+            </select>
           </div>
           <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
         </div>

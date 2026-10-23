@@ -70,6 +70,7 @@ try {
   const btnSaveSettings = document.getElementById('btn-save-settings');
   const inputApiKey = document.getElementById('api-key');
   const selectApiProvider = document.getElementById('api-provider');
+  const selectApiStorageMode = document.getElementById('api-storage-mode');
   const btnToggleKey = document.getElementById('btn-toggle-key');
   
   const historyPanel = document.getElementById('history-panel');
@@ -132,20 +133,64 @@ try {
     setTimeout(() => document.body.classList.remove('theme-transitioning'), 300);
   });
   
-  // Settings Load
+  // Settings Load (Defaults to sessionStorage / memory; only persists to localStorage on explicit opt-in)
+  let memorySettings = { provider: 'openai', key: '', storageMode: 'session' };
+
+  const getActiveSettings = () => {
+    if (memorySettings.key) {
+      return { ...memorySettings };
+    }
+    try {
+      const sessionRaw = sessionStorage.getItem('humaniser_settings');
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw);
+        return {
+          provider: parsed.provider || 'openai',
+          key: parsed.key || '',
+          storageMode: parsed.storageMode || 'session'
+        };
+      }
+      const localRaw = localStorage.getItem('humaniser_settings');
+      if (localRaw) {
+        const parsed = JSON.parse(localRaw);
+        // Migrate legacy persistent keys into sessionStorage unless user explicitly opted into 'local'
+        if (parsed.storageMode !== 'local') {
+          const migrated = {
+            provider: parsed.provider || 'openai',
+            key: parsed.key || '',
+            storageMode: 'session'
+          };
+          sessionStorage.setItem('humaniser_settings', JSON.stringify(migrated));
+          localStorage.removeItem('humaniser_settings');
+          return migrated;
+        }
+        return {
+          provider: parsed.provider || 'openai',
+          key: parsed.key || '',
+          storageMode: 'local'
+        };
+      }
+    } catch (e) {
+      console.warn('Humaniser: failed to read settings storage', e);
+    }
+    return { ...memorySettings };
+  };
+
   const loadSettings = () => {
-    const settings = JSON.parse(localStorage.getItem('humaniser_settings') || '{}');
-    if (settings.provider) selectApiProvider.value = settings.provider;
-    if (settings.key) inputApiKey.value = settings.key;
+    const settings = getActiveSettings();
+    memorySettings = { ...settings };
+    if (settings.provider && selectApiProvider) selectApiProvider.value = settings.provider;
+    if (settings.key && inputApiKey) inputApiKey.value = settings.key;
+    if (settings.storageMode && selectApiStorageMode) selectApiStorageMode.value = settings.storageMode;
   };
   loadSettings();
   
-  // Toast
+  // Toast (uses textContent to prevent HTML/DOM-XSS injection via filenames or error messages)
   const showToast = (message, type = 'success') => {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = message;
+    toast.textContent = String(message ?? '');
     container.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('fadeOut');
@@ -214,7 +259,15 @@ try {
         if (count > 0 && categoryMeta[cat]) {
           const item = document.createElement('span');
           item.className = 'legend-item';
-          item.innerHTML = `<span class="legend-dot" style="background:${categoryMeta[cat].color}"></span>${categoryMeta[cat].label} <span class="legend-count">${count}</span>`;
+          const dot = document.createElement('span');
+          dot.className = 'legend-dot';
+          dot.style.background = categoryMeta[cat].color;
+          const countEl = document.createElement('span');
+          countEl.className = 'legend-count';
+          countEl.textContent = String(count);
+          item.appendChild(dot);
+          item.appendChild(document.createTextNode(`${categoryMeta[cat].label} `));
+          item.appendChild(countEl);
           legendItems.appendChild(item);
         }
       }
@@ -455,7 +508,7 @@ try {
   optAuto.addEventListener('change', () => { if (optAuto.checked && textarea.value.trim()) runQuickFix({ quiet: true }); });
   
   btnDeepRewrite.addEventListener('click', async () => {
-    const settings = JSON.parse(localStorage.getItem('humaniser_settings') || '{}');
+    const settings = getActiveSettings();
     if (!settings.key) {
       settingsModal.style.display = 'flex';
       return;
@@ -543,15 +596,41 @@ try {
   });
   
   btnSaveSettings.addEventListener('click', () => {
-    localStorage.setItem('humaniser_settings', JSON.stringify({
-      provider: selectApiProvider.value,
-      key: inputApiKey.value
-    }));
+    const provider = selectApiProvider.value;
+    const key = inputApiKey.value.trim();
+    const storageMode = selectApiStorageMode ? selectApiStorageMode.value : 'session';
+    memorySettings = { provider, key, storageMode };
+
+    try {
+      if (storageMode === 'memory') {
+        sessionStorage.setItem('humaniser_settings', JSON.stringify({ provider, storageMode: 'memory' }));
+        localStorage.removeItem('humaniser_settings');
+      } else if (storageMode === 'local') {
+        localStorage.setItem('humaniser_settings', JSON.stringify({ provider, key, storageMode: 'local' }));
+        sessionStorage.removeItem('humaniser_settings');
+      } else {
+        sessionStorage.setItem('humaniser_settings', JSON.stringify({ provider, key, storageMode: 'session' }));
+        localStorage.removeItem('humaniser_settings');
+      }
+    } catch (e) {
+      console.warn('Humaniser: failed to persist settings', e);
+    }
+
     settingsModal.style.display = 'none';
-    showToast('Settings saved!');
+    showToast(
+      storageMode === 'memory'
+        ? 'Settings saved in memory only (RAM)!'
+        : storageMode === 'local'
+        ? 'Settings saved persistently (localStorage)!'
+        : 'Settings saved for this browser session (sessionStorage)!'
+    );
   });
   
   // History
+  const emptyTemplate = document.getElementById('history-empty')
+    ? document.getElementById('history-empty').cloneNode(true)
+    : null;
+
   const formatTimeAgo = (timestamp) => {
     const diff = Date.now() - timestamp;
     const mins = Math.floor(diff / 60000);
@@ -566,29 +645,51 @@ try {
   const openHistory = () => {
     const list = document.getElementById('history-list');
     const entries = getEntries();
-    const emptyEl = document.getElementById('history-empty');
+    const emptyEl = document.getElementById('history-empty') || emptyTemplate;
+    list.textContent = '';
     if (entries.length === 0) {
-      list.innerHTML = '';
       if (emptyEl) list.appendChild(emptyEl.cloneNode(true));
     } else {
-      list.innerHTML = '';
       entries.forEach((e) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        const preview = (e.originalText || '').substring(0, 80);
+        const rawText = String(e.originalText || '');
+        const preview = rawText.substring(0, 80);
         const scoreDisplay = e.humanisedScore != null ? `${e.originalScore || '?'} → ${e.humanisedScore}` : (e.originalScore || '—');
-        div.innerHTML = `
-          <div class="history-item-header">
-            <span class="history-mode">${e.mode || 'Unknown'}</span>
-            <span class="history-time">${formatTimeAgo(e.timestamp)}</span>
-          </div>
-          <div class="history-item-preview">${preview}${preview.length >= 80 ? '…' : ''}</div>
-          <div class="history-item-footer">
-            <span class="history-score">Score: ${scoreDisplay}</span>
-            <button class="history-delete panel-btn" data-id="${e.id}" title="Delete">✕</button>
-          </div>
-        `;
-        div.querySelector('.history-delete').addEventListener('click', (ev) => {
+
+        const header = document.createElement('div');
+        header.className = 'history-item-header';
+        const modeSpan = document.createElement('span');
+        modeSpan.className = 'history-mode';
+        modeSpan.textContent = String(e.mode || 'Unknown');
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'history-time';
+        timeSpan.textContent = formatTimeAgo(e.timestamp);
+        header.appendChild(modeSpan);
+        header.appendChild(timeSpan);
+
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'history-item-preview';
+        previewDiv.textContent = `${preview}${rawText.length > 80 ? '…' : ''}`;
+
+        const footer = document.createElement('div');
+        footer.className = 'history-item-footer';
+        const scoreSpan = document.createElement('span');
+        scoreSpan.className = 'history-score';
+        scoreSpan.textContent = `Score: ${scoreDisplay}`;
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'history-delete panel-btn';
+        deleteBtn.setAttribute('data-id', String(e.id || ''));
+        deleteBtn.title = 'Delete';
+        deleteBtn.textContent = '✕';
+        footer.appendChild(scoreSpan);
+        footer.appendChild(deleteBtn);
+
+        div.appendChild(header);
+        div.appendChild(previewDiv);
+        div.appendChild(footer);
+
+        deleteBtn.addEventListener('click', (ev) => {
           ev.stopPropagation();
           deleteEntry(e.id);
           openHistory();
@@ -623,7 +724,9 @@ try {
   document.getElementById('btn-clear-history').addEventListener('click', () => {
     if (confirm('Clear all history?')) {
       clearHistoryAPI();
-      document.getElementById('history-list').innerHTML = document.getElementById('history-empty').outerHTML;
+      const list = document.getElementById('history-list');
+      list.textContent = '';
+      if (emptyTemplate) list.appendChild(emptyTemplate.cloneNode(true));
     }
   });
 

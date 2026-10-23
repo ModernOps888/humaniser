@@ -270,5 +270,22 @@ test('README lists exactly the voice modes the engine implements', () => {
   for (const gone of ['Conversational', 'Creative']) assert.ok(!new RegExp(`\\*\\*${gone}\\*\\*`).test(readme), `README still lists "${gone}"`);
 });
 
+console.log('Client-Side Security Hardening (CSP, BYOK Storage, DOM-XSS Immunity)');
+test('index.html enforces strict CSP connect-src, no-referrer policy, and session-default key storage', () => {
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  assert.ok(html.includes('http-equiv="Content-Security-Policy"'), 'Missing CSP meta tag');
+  assert.ok(html.includes("connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com https://api.deepseek.com"), 'Missing locked connect-src');
+  assert.ok(html.includes('<meta name="referrer" content="no-referrer">'), 'Missing no-referrer meta tag');
+  assert.ok(html.includes('id="api-storage-mode"') && html.includes('<option value="session" selected>'), 'Missing sessionStorage default selector');
+});
+test('app.js and highlighter.js eliminate unescaped innerHTML sinks in history, toast, legend, and tooltips', () => {
+  const appJs = readFileSync(join(ROOT, 'app.js'), 'utf8');
+  const highlighterJs = readFileSync(join(ROOT, 'js', 'highlighter.js'), 'utf8');
+  assert.ok(!appJs.includes('toast.innerHTML'), 'showToast must use textContent, not innerHTML');
+  assert.ok(!appJs.includes('div.innerHTML ='), 'openHistory must construct DOM nodes safely without div.innerHTML');
+  assert.ok(!appJs.includes('item.innerHTML ='), 'legendItems must construct DOM nodes safely without item.innerHTML');
+  assert.ok(highlighterJs.includes('const safeCategory = escapeHtml(') && highlighterJs.includes('const safeMessage = escapeHtml('), 'highlighter.js tooltip must escape category/message/suggestion');
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

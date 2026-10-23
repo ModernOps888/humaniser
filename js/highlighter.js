@@ -57,15 +57,19 @@ export function highlightPatterns(highlightLayer, text, patterns) {
       const tooltip = document.createElement('div');
       tooltip.className = 'highlight-tooltip';
       
-      const categoryColor = getComputedStyle(mark).getPropertyValue('border-bottom-color');
+      const rawColor = getComputedStyle(mark).getPropertyValue('border-bottom-color');
+      const categoryColor = /^[#a-zA-Z0-9(),.\s%-]+$/.test(rawColor) ? rawColor : 'var(--accent)';
+      const safeCategory = escapeHtml(String(p.category || ''));
+      const safeMessage = escapeHtml(String(p.message || 'AI pattern detected'));
+      const safeSuggestion = p.suggestion ? escapeHtml(String(p.suggestion)) : '';
       
       tooltip.innerHTML = `
         <div class="tooltip-header">
           <span class="legend-dot" style="background:${categoryColor}"></span>
-          ${p.category}
+          ${safeCategory}
         </div>
-        <div class="tooltip-msg">${p.message || 'AI pattern detected'}</div>
-        ${p.suggestion ? `<div class="tooltip-sugg">Try: ${p.suggestion}</div>` : ''}
+        <div class="tooltip-msg">${safeMessage}</div>
+        ${safeSuggestion ? `<div class="tooltip-sugg">Try: ${safeSuggestion}</div>` : ''}
         ${p.replacement ? `<button class="tooltip-btn">Fix</button>` : ''}
         <div class="tooltip-arrow"></div>
       `;
